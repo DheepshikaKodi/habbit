@@ -1,0 +1,3269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Habbit — Team Portal</title>
+
+<!-- Firebase compat CDN -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --brand:#2563eb; --brand-d:#1d4ed8; --brand-l:#dbeafe;
+  --green:#16a34a; --green-l:#dcfce7;
+  --amber:#d97706; --amber-l:#fef3c7;
+  --red:#dc2626; --red-l:#fee2e2;
+  --purple:#7c3aed; --purple-l:#ede9fe;
+  --teal:#0d9488; --teal-l:#ccfbf1;
+  --gray1:#f9fafb; --gray2:#f3f4f6; --gray3:#e5e7eb; --gray4:#d1d5db;
+  --gray5:#9ca3af; --gray6:#6b7280; --gray7:#374151; --gray8:#1f2937;
+  --white:#fff; --sidebar:232px; --radius:10px;
+  --shadow:0 1px 4px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.06);
+  --shadow-lg:0 8px 32px rgba(0,0,0,.12);
+  --font:'Inter',system-ui,sans-serif;
+}
+body{font-family:var(--font);background:var(--gray1);color:var(--gray8);min-height:100vh;font-size:14px;line-height:1.5}
+button{cursor:pointer;border:none;outline:none;font-family:inherit}
+input,textarea,select{font-family:inherit;outline:none}
+a{color:inherit;text-decoration:none}
+ul{list-style:none}
+
+/* AUTH */
+#auth-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#1e3a5f 0%,#2563eb 60%,#7c3aed 100%)}
+.auth-card{background:var(--white);border-radius:20px;padding:48px 44px;width:420px;max-width:calc(100vw - 32px);box-shadow:var(--shadow-lg)}
+.auth-logo{display:flex;align-items:center;gap:10px;margin-bottom:32px;justify-content:center}
+.auth-logo .logo-mark{width:42px;height:42px;background:var(--brand);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;font-weight:900}
+.auth-logo .logo-text{font-size:26px;font-weight:800;color:var(--gray8);letter-spacing:-0.5px}
+.auth-logo .logo-text span{color:var(--brand)}
+.auth-tabs{display:flex;margin-bottom:28px;border-bottom:2px solid var(--gray3)}
+.auth-tab{flex:1;padding:10px;text-align:center;font-weight:600;font-size:14px;color:var(--gray5);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:.2s}
+.auth-tab.active{color:var(--brand);border-color:var(--brand)}
+.auth-field{margin-bottom:18px}
+.auth-field label{display:block;font-size:12px;font-weight:600;color:var(--gray6);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+.auth-field input{width:100%;padding:11px 14px;border:1.5px solid var(--gray3);border-radius:8px;font-size:14px;transition:.2s;background:var(--gray1)}
+.auth-field input:focus{border-color:var(--brand);background:#fff;box-shadow:0 0 0 3px var(--brand-l)}
+.auth-btn{width:100%;padding:13px;background:var(--brand);color:#fff;border-radius:8px;font-size:15px;font-weight:700;transition:.2s;margin-top:4px}
+.auth-btn:hover{background:var(--brand-d)}
+.auth-err{color:var(--red);font-size:13px;margin-top:12px;text-align:center;min-height:18px}
+.auth-note{margin-top:20px;padding:12px;background:var(--brand-l);border-radius:8px;font-size:12px;color:var(--brand-d);line-height:1.6}
+.auth-note strong{display:block;margin-bottom:4px}
+
+/* SHELL */
+#app{display:none;min-height:100vh}
+.app-layout{display:flex;min-height:100vh}
+.sidebar{width:var(--sidebar);background:var(--gray8);color:#fff;display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:100}
+.sb-header{padding:18px 16px 14px;border-bottom:1px solid rgba(255,255,255,.08)}
+.sb-logo{display:flex;align-items:center;gap:9px}
+.sb-logo .lm{width:30px;height:30px;background:var(--brand);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900}
+.sb-logo .lt{font-size:17px;font-weight:800;letter-spacing:-0.3px}
+.sb-logo .lt span{color:var(--brand)}
+.sb-user{padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.08)}
+.sb-user-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-user-role{font-size:11px;color:var(--gray5);margin-top:2px}
+.sb-nav{flex:1;padding:8px 0;overflow-y:auto}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 16px;font-size:13px;font-weight:500;color:#cbd5e1;cursor:pointer;transition:.15s;border-left:3px solid transparent}
+.nav-item:hover{background:rgba(255,255,255,.06);color:#fff}
+.nav-item.active{background:rgba(37,99,235,.25);color:#fff;border-color:var(--brand)}
+.nav-item .ni{font-size:15px;width:20px;text-align:center}
+.nav-item .nbadge{margin-left:auto;background:var(--red);color:#fff;border-radius:99px;font-size:10px;font-weight:700;padding:1px 7px}
+.sb-footer{padding:12px 16px;border-top:1px solid rgba(255,255,255,.08)}
+.sb-logout{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--gray5);cursor:pointer;transition:.15s}
+.sb-logout:hover{color:var(--red)}
+
+.main-content{margin-left:var(--sidebar);flex:1;display:flex;flex-direction:column;min-height:100vh}
+.topbar{background:var(--white);border-bottom:1px solid var(--gray3);padding:0 24px;height:58px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:60;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.topbar-title{font-size:17px;font-weight:700;color:var(--gray8);white-space:nowrap}
+.topbar-search{flex:1;max-width:440px;position:relative}
+.topbar-search input{width:100%;padding:9px 14px 9px 36px;border:1.5px solid var(--gray3);border-radius:99px;font-size:13px;background:var(--gray1);transition:.2s}
+.topbar-search input:focus{border-color:var(--brand);background:#fff;box-shadow:0 0 0 3px var(--brand-l)}
+.topbar-search .search-icon{position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--gray5);pointer-events:none}
+.search-results{position:absolute;top:calc(100% + 6px);left:0;right:0;background:#fff;border:1.5px solid var(--gray3);border-radius:12px;box-shadow:var(--shadow-lg);max-height:400px;overflow-y:auto;display:none;z-index:200}
+.search-results.open{display:block}
+.sr-group{padding:8px 14px 4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--gray5)}
+.sr-item{padding:9px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px}
+.sr-item:hover{background:var(--gray1)}
+.sr-item .sr-icon{font-size:15px;width:22px;text-align:center}
+.sr-item .sr-text{flex:1;min-width:0}
+.sr-item .sr-title{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sr-item .sr-sub{font-size:11px;color:var(--gray5)}
+.topbar-actions{display:flex;gap:8px;align-items:center;margin-left:auto}
+.page-body{padding:26px;flex:1;overflow-y:auto}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;transition:.2s;white-space:nowrap}
+.btn-primary{background:var(--brand);color:#fff}.btn-primary:hover{background:var(--brand-d)}
+.btn-ghost{background:transparent;color:var(--gray7);border:1.5px solid var(--gray3)}.btn-ghost:hover{background:var(--gray2)}
+.btn-danger{background:var(--red-l);color:var(--red)}.btn-danger:hover{background:var(--red);color:#fff}
+.btn-sm{padding:5px 11px;font-size:12px}
+.btn-icon{padding:7px;border-radius:7px;background:transparent;color:var(--gray6)}.btn-icon:hover{background:var(--gray2);color:var(--gray8)}
+
+/* CARDS + STATS */
+.card{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px;margin-bottom:24px}
+.stat-card{background:var(--white);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);border-left:4px solid var(--brand)}
+.stat-card.green{border-color:var(--green)}.stat-card.amber{border-color:var(--amber)}.stat-card.purple{border-color:var(--purple)}.stat-card.red{border-color:var(--red)}.stat-card.teal{border-color:var(--teal)}
+.stat-val{font-size:26px;font-weight:800;color:var(--gray8)}
+.stat-label{font-size:12px;color:var(--gray5);margin-top:2px}
+
+/* BADGES */
+.badge{display:inline-block;padding:2px 9px;border-radius:99px;font-size:11px;font-weight:600;white-space:nowrap}
+.badge-blue{background:var(--brand-l);color:var(--brand)}
+.badge-green{background:var(--green-l);color:var(--green)}
+.badge-amber{background:var(--amber-l);color:var(--amber)}
+.badge-red{background:var(--red-l);color:var(--red)}
+.badge-purple{background:var(--purple-l);color:var(--purple)}
+.badge-teal{background:var(--teal-l);color:var(--teal)}
+.badge-gray{background:var(--gray2);color:var(--gray6)}
+
+/* PROJECT CARD */
+.proj-card{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;cursor:pointer;transition:.2s;border:2px solid transparent;position:relative}
+.proj-card:hover{border-color:var(--brand-l);box-shadow:0 4px 20px rgba(37,99,235,.12)}
+.proj-card-header{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px}
+.proj-title{font-size:15px;font-weight:700;color:var(--gray8)}
+.proj-dept{font-size:11px;color:var(--gray5);margin-top:3px}
+.proj-desc{font-size:13px;color:var(--gray6);margin-bottom:12px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.progress-bar{height:6px;background:var(--gray3);border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;background:var(--brand);border-radius:3px;transition:.4s}
+.progress-fill.green{background:var(--green)}
+.progress-pct{font-size:11px;color:var(--gray5);margin-top:4px;text-align:right}
+.proj-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px}
+.avatar{width:26px;height:26px;border-radius:50%;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;border:2px solid #fff;margin-left:-4px;flex-shrink:0}
+
+/* TASK ROW */
+.task-row{background:var(--white);border-radius:8px;padding:12px 16px;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow);margin-bottom:8px;transition:.2s;cursor:pointer}
+.task-row:hover{box-shadow:0 4px 16px rgba(0,0,0,.1)}
+.task-check{width:18px;height:18px;border-radius:50%;border:2px solid var(--gray4);flex-shrink:0;cursor:pointer;transition:.15s;display:flex;align-items:center;justify-content:center;font-size:11px}
+.task-check.done{background:var(--green);border-color:var(--green);color:#fff}
+.task-title{flex:1;font-size:13px;font-weight:500;color:var(--gray8)}
+.task-title.done{text-decoration:line-through;color:var(--gray5)}
+.task-row-meta{display:flex;align-items:center;gap:8px;flex-shrink:0}
+
+/* SECTION */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:10px;flex-wrap:wrap}
+.section-title{font-size:16px;font-weight:700;color:var(--gray8)}
+.section-sub{font-size:13px;color:var(--gray5);margin-top:2px}
+
+/* FILTER BAR */
+.filter-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+.filter-bar input[type=text]{flex:1;min-width:180px;padding:8px 12px;border:1.5px solid var(--gray3);border-radius:8px;font-size:13px;background:var(--white)}
+.filter-bar input[type=text]:focus{border-color:var(--brand)}
+.filter-bar select{padding:8px 10px;border:1.5px solid var(--gray3);border-radius:8px;font-size:13px;background:var(--white);color:var(--gray7)}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;pointer-events:none;transition:.2s}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--white);border-radius:16px;padding:26px;width:600px;max-width:100%;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-lg);transform:translateY(16px);transition:.25s}
+.modal-overlay.open .modal{transform:translateY(0)}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.modal-title{font-size:17px;font-weight:700;color:var(--gray8)}
+.modal-close{background:var(--gray2);border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--gray6);cursor:pointer;flex-shrink:0}
+.modal-close:hover{background:var(--gray3)}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:22px;padding-top:16px;border-top:1px solid var(--gray3)}
+.form-row{margin-bottom:15px}
+.form-label{display:block;font-size:12px;font-weight:600;color:var(--gray6);margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
+.form-input{width:100%;padding:10px 12px;border:1.5px solid var(--gray3);border-radius:8px;font-size:14px;transition:.15s;background:var(--white)}
+.form-input:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-l)}
+.form-select{width:100%;padding:10px 12px;border:1.5px solid var(--gray3);border-radius:8px;font-size:14px;background:var(--white);color:var(--gray8)}
+.form-textarea{width:100%;padding:10px 12px;border:1.5px solid var(--gray3);border-radius:8px;font-size:13px;resize:vertical;min-height:76px;transition:.15s}
+.form-textarea:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-l)}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-hint{font-size:11px;color:var(--gray5);margin-top:4px}
+
+/* MEMBER CHIPS */
+.member-chips{display:flex;flex-wrap:wrap;gap:6px;padding:8px;border:1.5px solid var(--gray3);border-radius:8px;min-height:42px;background:var(--white);cursor:pointer}
+.member-chip{display:inline-flex;align-items:center;gap:5px;background:var(--brand-l);color:var(--brand);border-radius:99px;padding:3px 10px 3px 8px;font-size:12px;font-weight:600}
+.member-chip button{background:none;color:var(--brand);font-size:14px;line-height:1;padding:0}
+.members-dropdown{border:1.5px solid var(--gray3);border-radius:8px;background:var(--white);max-height:160px;overflow-y:auto;display:none;box-shadow:var(--shadow)}
+.members-dropdown.open{display:block}
+.member-opt{padding:8px 12px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:8px}
+.member-opt:hover{background:var(--gray2)}
+.check-list{border:1.5px solid var(--gray3);border-radius:8px;max-height:170px;overflow-y:auto;padding:6px}
+.check-item{display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:13px;border-radius:6px;cursor:pointer}
+.check-item:hover{background:var(--gray1)}
+
+/* COMMENTS */
+.comments-section{margin-top:22px;border-top:1px solid var(--gray3);padding-top:18px}
+.comment-list{display:flex;flex-direction:column;gap:12px;margin-bottom:14px;max-height:260px;overflow-y:auto}
+.comment-item{display:flex;gap:10px}
+.comment-avatar{width:30px;height:30px;border-radius:50%;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.comment-body{flex:1;background:var(--gray1);border-radius:0 10px 10px 10px;padding:10px 12px}
+.comment-meta{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.comment-author{font-size:12px;font-weight:700;color:var(--gray8)}
+.comment-time{font-size:11px;color:var(--gray5)}
+.comment-text{font-size:13px;color:var(--gray7);white-space:pre-wrap}
+.comment-text .mention{color:var(--brand);font-weight:600}
+.comment-input-area{display:flex;gap:8px;align-items:flex-end;position:relative}
+.comment-textarea{flex:1;padding:9px 12px;border:1.5px solid var(--gray3);border-radius:8px;font-size:13px;resize:none;min-height:38px;max-height:120px;transition:.15s;background:var(--white)}
+.comment-textarea:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-l)}
+.mention-dropdown{position:absolute;background:var(--white);border:1.5px solid var(--gray3);border-radius:8px;box-shadow:var(--shadow);z-index:2000;min-width:200px;display:none}
+.mention-dropdown.open{display:block}
+.mention-opt{padding:8px 12px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:8px}
+.mention-opt:hover,.mention-opt.active{background:var(--gray2)}
+
+/* FEED */
+.feed-item{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--gray3)}
+.feed-item:last-child{border-bottom:none}
+.feed-icon{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;background:var(--brand-l)}
+.feed-content{flex:1}
+.feed-text{font-size:13px;color:var(--gray7)}
+.feed-time{font-size:11px;color:var(--gray5);margin-top:2px}
+
+/* MEMBER CARDS */
+.member-card{background:var(--white);border-radius:var(--radius);padding:16px;display:flex;align-items:center;gap:13px;box-shadow:var(--shadow)}
+.member-avatar{width:42px;height:42px;border-radius:50%;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0}
+.member-info{flex:1;min-width:0}
+.member-name{font-size:14px;font-weight:700;color:var(--gray8)}
+.member-dept{font-size:12px;color:var(--gray5);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.member-actions{display:flex;gap:6px;align-items:center}
+
+/* AREA CARD */
+.area-card{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;border-top:4px solid var(--teal)}
+.routine-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;background:var(--gray1);margin-bottom:6px;font-size:13px}
+.routine-row .r-freq{font-size:10px;font-weight:700;text-transform:uppercase;color:var(--teal);background:var(--teal-l);padding:2px 8px;border-radius:99px}
+
+/* RESOURCES */
+.folder-chip{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:99px;font-size:13px;font-weight:600;background:var(--white);border:1.5px solid var(--gray3);cursor:pointer;transition:.15s}
+.folder-chip:hover{border-color:var(--brand)}
+.folder-chip.active{background:var(--brand);color:#fff;border-color:var(--brand)}
+.res-card{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;transition:.2s;border:2px solid transparent}
+.res-card:hover{border-color:var(--brand-l)}
+.res-icon{font-size:24px;margin-bottom:8px}
+.res-title{font-size:14px;font-weight:700;margin-bottom:4px;word-break:break-word}
+.res-sub{font-size:11px;color:var(--gray5)}
+.res-actions{display:flex;gap:6px;margin-top:10px}
+
+/* CALENDAR */
+.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.cal-title{font-size:18px;font-weight:800}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.cal-dow{text-align:center;font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gray5);padding:6px 0}
+.cal-cell{background:var(--white);border-radius:8px;min-height:96px;padding:6px;box-shadow:var(--shadow);cursor:pointer;transition:.15s;border:2px solid transparent;overflow:hidden}
+.cal-cell:hover{border-color:var(--brand-l)}
+.cal-cell.other-month{opacity:.4}
+.cal-cell.today{border-color:var(--brand)}
+.cal-date{font-size:12px;font-weight:700;margin-bottom:4px}
+.cal-cell.today .cal-date{color:var(--brand)}
+.cal-event{font-size:10px;font-weight:600;padding:2px 6px;border-radius:5px;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+.ce-meeting{background:var(--purple-l);color:var(--purple)}
+.ce-task{background:var(--amber-l);color:var(--amber)}
+.ce-task.overdue{background:var(--red-l);color:var(--red)}
+.ce-proj{background:var(--brand-l);color:var(--brand)}
+.ce-routine{background:var(--teal-l);color:var(--teal)}
+.cal-more{font-size:10px;color:var(--gray5);font-weight:600}
+
+/* CHAT */
+.chat-layout{display:flex;gap:0;height:calc(100vh - 58px - 52px);background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+.chat-sidebar{width:240px;border-right:1.5px solid var(--gray3);overflow-y:auto;flex-shrink:0}
+.chat-side-header{padding:14px 16px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--gray5);border-bottom:1px solid var(--gray3)}
+.chat-channel{padding:11px 16px;font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:8px;transition:.15s;border-left:3px solid transparent}
+.chat-channel:hover{background:var(--gray1)}
+.chat-channel.active{background:var(--brand-l);border-color:var(--brand);color:var(--brand-d);font-weight:700}
+.chat-main{flex:1;display:flex;flex-direction:column;min-width:0}
+.chat-header{padding:13px 18px;border-bottom:1.5px solid var(--gray3);font-weight:700;font-size:14px;display:flex;align-items:center;gap:8px}
+.chat-messages{flex:1;overflow-y:auto;padding:16px 18px;display:flex;flex-direction:column;gap:12px}
+.chat-msg{display:flex;gap:10px;max-width:80%}
+.chat-msg.mine{align-self:flex-end;flex-direction:row-reverse}
+.chat-bubble{background:var(--gray1);border-radius:2px 12px 12px 12px;padding:9px 13px}
+.chat-msg.mine .chat-bubble{background:var(--brand);color:#fff;border-radius:12px 2px 12px 12px}
+.chat-msg-meta{display:flex;gap:6px;align-items:baseline;margin-bottom:3px}
+.chat-msg-author{font-size:11px;font-weight:700}
+.chat-msg.mine .chat-msg-author{color:rgba(255,255,255,.85)}
+.chat-msg-time{font-size:10px;color:var(--gray5)}
+.chat-msg.mine .chat-msg-time{color:rgba(255,255,255,.6)}
+.chat-msg-text{font-size:13px;white-space:pre-wrap;word-break:break-word}
+.chat-input-bar{display:flex;gap:8px;padding:12px 16px;border-top:1.5px solid var(--gray3)}
+.chat-input-bar textarea{flex:1;padding:10px 13px;border:1.5px solid var(--gray3);border-radius:10px;font-size:13px;resize:none;max-height:100px}
+.chat-input-bar textarea:focus{border-color:var(--brand)}
+
+/* METRICS */
+.metric-dept{margin-bottom:26px}
+.metric-bar-track{height:8px;background:var(--gray3);border-radius:4px;overflow:hidden;flex:1}
+.metric-bar-fill{height:100%;border-radius:4px;background:var(--brand)}
+.metric-table{width:100%;border-collapse:collapse;font-size:13px}
+.metric-table th{text-align:left;padding:9px 12px;background:var(--gray1);font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--gray6);font-weight:700}
+.metric-table td{padding:10px 12px;border-bottom:1px solid var(--gray2)}
+.metric-table tr:last-child td{border-bottom:none}
+
+/* EMPTY + TOAST */
+.empty-state{text-align:center;padding:50px 20px;color:var(--gray5)}
+.empty-state .es-icon{font-size:44px;margin-bottom:10px}
+.empty-state h3{font-size:15px;font-weight:600;color:var(--gray6);margin-bottom:5px}
+.empty-state p{font-size:13px}
+#toast-container{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px}
+.toast{background:var(--gray8);color:#fff;padding:11px 18px;border-radius:10px;font-size:13px;font-weight:500;box-shadow:var(--shadow-lg);animation:slideIn .25s ease}
+.toast.success{background:var(--green)}
+.toast.error{background:var(--red)}
+@keyframes slideIn{from{transform:translateX(60px);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* DB CONFIG */
+#db-config-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:500;display:flex;align-items:center;justify-content:center;padding:16px}
+.db-config-card{background:#fff;border-radius:16px;padding:32px;max-width:500px;width:100%;box-shadow:var(--shadow-lg)}
+.db-config-card h2{font-size:20px;font-weight:800;margin-bottom:8px}
+.db-config-card p{font-size:13px;color:var(--gray6);margin-bottom:18px;line-height:1.7}
+.db-config-card ol{font-size:13px;color:var(--gray7);padding-left:18px;line-height:2;margin-bottom:18px}
+.db-config-card code{background:var(--gray2);padding:2px 6px;border-radius:5px;font-size:12px}
+
+input[type=range]{-webkit-appearance:none;width:100%;height:6px;background:var(--gray3);border-radius:3px;outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--brand);cursor:pointer;box-shadow:0 0 0 3px var(--brand-l)}
+
+/* ─── BREADCRUMB / DRILL-DOWN ─── */
+.breadcrumb{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:16px;font-size:13px}
+.crumb{color:var(--brand);font-weight:600;cursor:pointer;padding:2px 4px;border-radius:5px}
+.crumb:hover{background:var(--brand-l)}
+.crumb.current{color:var(--gray7);cursor:default}
+.crumb.current:hover{background:none}
+.crumb-sep{color:var(--gray4)}
+.page-head{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px 22px;margin-bottom:18px}
+.page-head-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.page-head h1{font-size:20px;font-weight:800;color:var(--gray8)}
+.page-head .ph-desc{font-size:13px;color:var(--gray6);margin-top:6px;line-height:1.6;max-width:640px}
+.ph-badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center}
+.ph-actions{display:flex;gap:6px;flex-wrap:wrap}
+
+/* ─── VIEW SWITCHER ─── */
+.view-switch{display:inline-flex;background:var(--gray2);border-radius:8px;padding:3px;gap:2px}
+.vs-btn{padding:6px 13px;border-radius:6px;font-size:12px;font-weight:600;color:var(--gray6);background:transparent}
+.vs-btn.active{background:var(--white);color:var(--brand);box-shadow:var(--shadow)}
+
+/* ─── KANBAN ─── */
+.kanban{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;align-items:start}
+.kan-col{background:var(--gray2);border-radius:10px;padding:10px;min-height:120px}
+.kan-col.drag-over{outline:2px dashed var(--brand);background:var(--brand-l)}
+.kan-col-head{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--gray6);padding:2px 6px 10px;display:flex;justify-content:space-between}
+.kan-card{background:var(--white);border-radius:8px;padding:11px;box-shadow:var(--shadow);margin-bottom:8px;cursor:grab;border-left:3px solid var(--gray4)}
+.kan-card:active{cursor:grabbing}
+.kan-card.p-high{border-color:var(--amber)}.kan-card.p-critical{border-color:var(--red)}.kan-card.p-low{border-color:var(--gray4)}
+.kan-card-title{font-size:13px;font-weight:600;margin-bottom:6px}
+.kan-card-meta{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+
+/* ─── TASK TABLE ─── */
+.tbl-wrap{overflow-x:auto;background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow)}
+.data-table{width:100%;border-collapse:collapse;font-size:13px}
+.data-table th{text-align:left;padding:11px 14px;background:var(--gray1);font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--gray6);font-weight:700;white-space:nowrap;position:sticky;top:0}
+.data-table td{padding:10px 14px;border-bottom:1px solid var(--gray2)}
+.data-table tr{cursor:pointer}
+.data-table tbody tr:hover{background:var(--gray1)}
+.data-table tr:last-child td{border-bottom:none}
+
+/* ─── SUB-PROJECT TILE ─── */
+.sp-tile{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;cursor:pointer;border:2px solid transparent;border-top:4px solid var(--purple);transition:.2s}
+.sp-tile:hover{border-color:var(--purple-l);border-top-color:var(--purple);box-shadow:0 4px 18px rgba(124,58,237,.14)}
+
+/* ─── ADMIN MASTER ─── */
+.master-table{width:100%;border-collapse:collapse}
+.master-table th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--gray6);padding:6px 8px;font-weight:700}
+.master-table td{padding:5px 6px;vertical-align:top}
+.master-table input,.master-table select{width:100%;padding:8px 10px;border:1.5px solid var(--gray3);border-radius:7px;font-size:13px}
+.master-table input:focus{border-color:var(--brand)}
+.creds-box{background:var(--gray1);border:1.5px dashed var(--gray4);border-radius:10px;padding:14px;margin-top:16px}
+.creds-row{display:flex;gap:10px;font-size:12px;font-family:monospace;padding:5px 0;border-bottom:1px solid var(--gray2);align-items:center}
+.creds-row:last-child{border-bottom:none}
+
+@media(max-width:768px){
+  .kanban{grid-template-columns:1fr}
+  :root{--sidebar:0px}
+  .sidebar{transform:translateX(-232px)}
+  .main-content{margin-left:0}
+  .form-grid{grid-template-columns:1fr}
+  .topbar{padding:0 12px;flex-wrap:wrap}
+  .page-body{padding:14px}
+  .chat-sidebar{width:150px}
+}
+</style>
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="logo-mark">H</div>
+      <div class="logo-text">Hab<span>bit</span></div>
+    </div>
+    <div id="login-form">
+      <div class="auth-field"><label>Email</label><input type="email" id="login-email" placeholder="you@company.com" autocomplete="email"/></div>
+      <div class="auth-field"><label>Password</label><input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password"/></div>
+      <button class="auth-btn" onclick="doLogin()">Sign In</button>
+      <div class="auth-note"><strong>🔒 Accounts are created by your admin</strong>Sign in with the email and temporary password (your phone number) your admin gave you. Change it after first login.</div>
+    </div>
+    <div class="auth-err" id="auth-err"></div>
+    <div style="text-align:center;font-size:11px;color:var(--gray5);margin-top:18px">Habbit v4.0 · manager edition</div>
+  </div>
+</div>
+
+<!-- DB CONFIG OVERLAY -->
+<div id="db-config-overlay" style="display:none">
+  <div class="db-config-card">
+    <h2>🔧 Enable Firebase Realtime Database</h2>
+    <p>Habbit uses Firebase Realtime Database for live sync. It looks like the database isn't reachable for project <code>habbit-7754c</code>.</p>
+    <ol>
+      <li>Firebase Console → <strong>Build → Realtime Database</strong></li>
+      <li>Click <strong>Create Database</strong> → us-central1 → Test mode</li>
+      <li>Copy the URL shown (e.g. <code>https://habbit-7754c-default-rtdb.firebaseio.com</code>)</li>
+    </ol>
+    <div class="form-row"><label class="form-label">Database URL</label><input class="form-input" id="db-url-input" placeholder="https://habbit-7754c-default-rtdb.firebaseio.com"/></div>
+    <button class="btn btn-primary" style="width:100%" onclick="saveDatabaseUrl()">Save & Continue</button>
+    <button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="tryDefaultUrl()">Try Default URL</button>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <div class="app-layout">
+    <aside class="sidebar" id="sidebar">
+      <div class="sb-header">
+        <div class="sb-logo"><div class="lm">H</div><div class="lt">Hab<span>bit</span></div></div>
+      </div>
+      <div class="sb-user">
+        <div class="sb-user-name" id="sb-user-name">—</div>
+        <div class="sb-user-role" id="sb-user-role">—</div>
+      </div>
+      <nav class="sb-nav" id="sb-nav"><!-- built by JS per role --></nav>
+      <div class="sb-footer">
+        <div class="sb-logout" style="color:var(--gray5);margin-bottom:8px" onclick="changeMyPassword()">🔒 Change Password</div>
+        <div class="sb-logout" onclick="doLogout()">🚪 Sign Out</div>
+        <div style="font-size:10px;color:var(--gray6);margin-top:10px;letter-spacing:.3px">Habbit v4.0 · manager edition</div>
+      </div>
+    </aside>
+
+    <div class="main-content">
+      <div class="topbar">
+        <div class="topbar-title" id="topbar-title">Dashboard</div>
+        <div class="topbar-search">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="global-search" placeholder="Search projects, tasks, areas, resources…" oninput="runGlobalSearch()" onfocus="runGlobalSearch()"/>
+          <div class="search-results" id="search-results"></div>
+        </div>
+        <div class="topbar-actions" id="topbar-actions"></div>
+      </div>
+      <div class="page-body" id="page-body"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ MODALS ══════════ -->
+
+<!-- Project Modal -->
+<div class="modal-overlay" id="proj-modal-overlay" onclick="closeModal(event,'proj-modal-overlay')">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title" id="proj-modal-title">New Project</div><div class="modal-close" onclick="closeModalX('proj-modal-overlay')">✕</div></div>
+    <div class="form-row"><label class="form-label">Project Title *</label><input class="form-input" id="pm-title"/></div>
+    <div class="form-row"><label class="form-label">Description</label><textarea class="form-textarea" id="pm-desc"></textarea></div>
+    <div class="form-grid">
+      <div class="form-row"><label class="form-label">Department</label><select class="form-select" id="pm-dept"></select></div>
+      <div class="form-row"><label class="form-label">Status</label>
+        <select class="form-select" id="pm-status">
+          <option value="planning">Planning</option><option value="active">Active</option>
+          <option value="on-hold">On Hold</option><option value="review">In Review</option><option value="done">Done</option>
+        </select></div>
+    </div>
+    <div class="form-grid">
+      <div class="form-row"><label class="form-label">Priority</label>
+        <select class="form-select" id="pm-priority"><option value="normal">Normal</option><option value="high">High</option><option value="critical">Critical</option><option value="low">Low</option></select></div>
+      <div class="form-row"><label class="form-label">Due Date</label><input type="date" class="form-input" id="pm-due"/></div>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Progress</label>
+      <input type="range" min="0" max="100" value="0" id="pm-progress" oninput="document.getElementById('pm-prog-val').textContent=this.value+'%'"/>
+      <div class="form-hint">Current: <span id="pm-prog-val">0%</span></div>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Assign Members</label>
+      <div id="pm-assignees-chips" class="member-chips" onclick="toggleDD('pm-member-dd')"></div>
+      <div class="members-dropdown" id="pm-member-dd"></div>
+    </div>
+    <input type="hidden" id="pm-id"/>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModalX('proj-modal-overlay')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveProject()">💾 Save Project</button>
+    </div>
+  </div>
+</div>
+
+<!-- Task Modal -->
+<div class="modal-overlay" id="task-modal-overlay" onclick="closeModal(event,'task-modal-overlay')">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title" id="task-modal-title">New Task</div><div class="modal-close" onclick="closeModalX('task-modal-overlay')">✕</div></div>
+    <div class="form-row"><label class="form-label">Task Title *</label><input class="form-input" id="tm-title"/></div>
+    <div class="form-row"><label class="form-label">Description / Notes</label><textarea class="form-textarea" id="tm-desc"></textarea></div>
+    <div class="form-grid">
+      <div class="form-row"><label class="form-label">Project</label><select class="form-select" id="tm-project" onchange="taskProjectChanged()"></select></div>
+      <div class="form-row"><label class="form-label">Sub-project</label><select class="form-select" id="tm-subproject"></select></div>
+    </div>
+    <div class="form-grid">
+      <div class="form-row"><label class="form-label">Assigned To</label><select class="form-select" id="tm-assignee"></select></div>
+      <div class="form-row"><label class="form-label">Priority</label>
+        <select class="form-select" id="tm-priority"><option value="normal">Normal</option><option value="high">High</option><option value="critical">Critical</option><option value="low">Low</option></select></div>
+    </div>
+    <div class="form-grid">
+      <div class="form-row"><label class="form-label">Due Date *</label><input type="date" class="form-input" id="tm-due"/></div>
+      <div class="form-row"><label class="form-label">Status</label>
+        <select class="form-select" id="tm-status"><option value="todo">To Do</option><option value="in-progress">In Progress</option><option value="review">In Review</option><option value="done">Done</option></select></div>
+    </div>
+    <input type="hidden" id="tm-id"/>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModalX('task-modal-overlay')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveTask()">💾 Save Task</button>
+    </div>
+  </div>
+</div>
+
+<!-- Sub-project Modal -->
+<div class="modal-overlay" id="sp-modal-overlay" onclick="closeModal(event,'sp-modal-overlay')">
+  <div class="modal" style="width:560px">
+    <div class="modal-header"><div class="modal-title" id="sp-modal-title">New Sub-project</div><div class="modal-close" onclick="closeModalX('sp-modal-overlay')">✕</div></div>
+    <div class="form-hint" id="sp-parent-banner" style="margin-bottom:12px;padding:8px 12px;background:var(--brand-l);border-radius:8px;color:var(--brand-d);font-weight:600"></div>
+    <div class="form-row"><label class="form-label">Sub-project Title *</label><input class="form-input" id="spm-title"/></div>
+    <div class="form-row"><label class="form-label">Description</label><textarea class="form-textarea" id="spm-desc"></textarea></div>
+    <div class="form-grid">
+      <div class="form-row"><label class="form-label">Status</label>
+        <select class="form-select" id="spm-status"><option value="planning">Planning</option><option value="active">Active</option><option value="on-hold">On Hold</option><option value="review">In Review</option><option value="done">Done</option></select></div>
+      <div class="form-row"><label class="form-label">Priority</label>
+        <select class="form-select" id="spm-priority"><option value="normal">Normal</option><option value="high">High</option><option value="critical">Critical</option><option value="low">Low</option></select></div>
+    </div>
+    <div class="form-row"><label class="form-label">Due Date</label><input type="date" class="form-input" id="spm-due"/></div>
+    <div class="form-row">
+      <label class="form-label">Assign Members</label>
+      <div id="spm-assignees-chips" class="member-chips" onclick="toggleDD('spm-member-dd')"></div>
+      <div class="members-dropdown" id="spm-member-dd"></div>
+    </div>
+    <input type="hidden" id="spm-project-id"/><input type="hidden" id="spm-id"/>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModalX('sp-modal-overlay')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveSubproject()">💾 Save Sub-project</button>
+    </div>
+  </div>
+</div>
+
+<!-- Subtask Modal -->
+<div class="modal-overlay" id="subtask-modal-overlay" onclick="closeModal(event,'subtask-modal-overlay')">
+  <div class="modal" style="width:480px">
+    <div class="modal-header"><div class="modal-title" id="subtask-modal-title">New Subtask</div><div class="modal-close" onclick="closeModalX('subtask-modal-overlay')">✕</div></div>
+    <div class="form-row"><label class="form-label">Subtask Title *</label><input class="form-input" id="stm-title"/></div>
+    <div class="form-grid">
+      <div class="form-row"><label class="form-label">Assigned To</label><select class="form-select" id="stm-assignee"></select></div>
+      <div class="form-row"><label class="form-label">Status</label>
+        <select class="form-select" id="stm-status"><option value="todo">To Do</option><option value="in-progress">In Progress</option><option value="review">In Review</option><option value="done">Done</option></select></div>
+    </div>
+    <div class="form-row"><label class="form-label">Due Date *</label><input type="date" class="form-input" id="stm-due"/></div>
+    <input type="hidden" id="stm-task-id"/><input type="hidden" id="stm-id"/>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModalX('subtask-modal-overlay')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveSubtask()">💾 Save Subtask</button>
+    </div>
+  </div>
+</div>
+
+<!-- Area Modal -->
+<div class="modal-overlay" id="area-modal-overlay" onclick="closeModal(event,'area-modal-overlay')">
+  <div class="modal" style="width:520px">
+    <div class="modal-header"><div class="modal-title" id="area-modal-title">New Area</div><div class="modal-close" onclick="closeModalX('area-modal-overlay')">✕</div></div>
+    <div class="form-row"><label class="form-label">Area Name *</label><input class="form-input" id="am-title" placeholder="e.g. Quality Control, Compliance, Team Ops"/></div>
+    <div class="form-row"><label class="form-label">Description</label><textarea class="form-textarea" id="am-desc" placeholder="What ongoing responsibility does this area cover?"></textarea></div>
+    <div class="form-grid">
+      <div class="form-row"><label class="form-label">Department</label><select class="form-select" id="am-dept"></select></div>
+      <div class="form-row"><label class="form-label">Owner</label><select class="form-select" id="am-owner"></select></div>
+    </div>
+    <input type="hidden" id="am-id"/>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModalX('area-modal-overlay')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveArea()">💾 Save Area</button>
+    </div>
+  </div>
+</div>
+
+<!-- Routine Modal -->
+<div class="modal-overlay" id="routine-modal-overlay" onclick="closeModal(event,'routine-modal-overlay')">
+  <div class="modal" style="width:480px">
+    <div class="modal-header"><div class="modal-title" id="routine-modal-title">New Routine</div><div class="modal-close" onclick="closeModalX('routine-modal-overlay')">✕</div></div>
+    <div class="form-row"><label class="form-label">Routine Title *</label><input class="form-input" id="rm-title" placeholder="e.g. Weekly compliance check"/></div>
+    <div class="form-grid">
+      <div class="form-row"><label class="form-label">Frequency</label>
+        <select class="form-select" id="rm-freq"><option value="daily">Daily</option><option value="weekly" selected>Weekly</option><option value="monthly">Monthly</option><option value="quarterly">Quarterly</option></select></div>
+      <div class="form-row"><label class="form-label">Next Due</label><input type="date" class="form-input" id="rm-due"/></div>
+    </div>
+    <div class="form-row"><label class="form-label">Assigned To</label><select class="form-select" id="rm-assignee"></select></div>
+    <input type="hidden" id="rm-area-id"/><input type="hidden" id="rm-id"/>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModalX('routine-modal-overlay')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveRoutine()">💾 Save Routine</button>
+    </div>
+  </div>
+</div>
+
+<!-- Resource Modal -->
+<div class="modal-overlay" id="res-modal-overlay" onclick="closeModal(event,'res-modal-overlay')">
+  <div class="modal" style="width:520px">
+    <div class="modal-header"><div class="modal-title" id="res-modal-title">Add Resource</div><div class="modal-close" onclick="closeModalX('res-modal-overlay')">✕</div></div>
+    <div class="form-row"><label class="form-label">Type</label>
+      <select class="form-select" id="rs-type" onchange="resTypeChanged()">
+        <option value="link">🔗 Link (Drive, OneDrive, web…)</option>
+        <option value="note">📝 Note</option>
+        <option value="file">📄 File upload (max 1 MB)</option>
+      </select></div>
+    <div class="form-row"><label class="form-label">Title *</label><input class="form-input" id="rs-title"/></div>
+    <div class="form-row" id="rs-url-row"><label class="form-label">URL *</label><input class="form-input" id="rs-url" placeholder="https://…"/></div>
+    <div class="form-row" id="rs-note-row" style="display:none"><label class="form-label">Note Content</label><textarea class="form-textarea" id="rs-note" style="min-height:130px"></textarea></div>
+    <div class="form-row" id="rs-file-row" style="display:none">
+      <label class="form-label">Choose File (≤ 1 MB)</label>
+      <input type="file" class="form-input" id="rs-file"/>
+      <div class="form-hint">Files are stored inside the team database — keep them small. For big files use a link to Drive/OneDrive instead.</div>
+    </div>
+    <div class="form-grid">
+      <div class="form-row"><label class="form-label">Folder</label><select class="form-select" id="rs-folder"></select></div>
+      <div class="form-row"><label class="form-label">Related Project</label><select class="form-select" id="rs-project"></select></div>
+    </div>
+    <input type="hidden" id="rs-id"/>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModalX('res-modal-overlay')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveResource()">💾 Save Resource</button>
+    </div>
+  </div>
+</div>
+
+<!-- Meeting Modal -->
+<div class="modal-overlay" id="meet-modal-overlay" onclick="closeModal(event,'meet-modal-overlay')">
+  <div class="modal" style="width:520px">
+    <div class="modal-header"><div class="modal-title" id="meet-modal-title">New Meeting</div><div class="modal-close" onclick="closeModalX('meet-modal-overlay')">✕</div></div>
+    <div class="form-row"><label class="form-label">Meeting Title *</label><input class="form-input" id="mt-title" placeholder="e.g. Sprint review"/></div>
+    <div class="form-grid">
+      <div class="form-row"><label class="form-label">Date *</label><input type="date" class="form-input" id="mt-date"/></div>
+      <div class="form-row"><label class="form-label">Time</label><input type="time" class="form-input" id="mt-time"/></div>
+    </div>
+    <div class="form-row"><label class="form-label">Agenda / Notes</label><textarea class="form-textarea" id="mt-notes"></textarea></div>
+    <div class="form-row"><label class="form-label">Attendees</label><div class="check-list" id="mt-attendees"></div></div>
+    <input type="hidden" id="mt-id"/>
+    <div class="modal-footer">
+      <button class="btn btn-danger" id="mt-delete-btn" style="margin-right:auto;display:none" onclick="deleteMeeting()">🗑 Delete</button>
+      <button class="btn btn-ghost" onclick="closeModalX('meet-modal-overlay')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveMeeting()">💾 Save Meeting</button>
+    </div>
+  </div>
+</div>
+
+<!-- Detail Modal -->
+<div class="modal-overlay" id="detail-modal-overlay" onclick="closeDetailModal(event)">
+  <div class="modal" style="width:700px">
+    <div class="modal-header"><div class="modal-title" id="detail-modal-title">Detail</div><div class="modal-close" onclick="closeDetailModal()">✕</div></div>
+    <div id="detail-modal-body"></div>
+  </div>
+</div>
+
+<!-- Member Modal (admin) -->
+<div class="modal-overlay" id="member-modal-overlay" onclick="closeModal(event,'member-modal-overlay')">
+  <div class="modal" style="width:460px">
+    <div class="modal-header"><div class="modal-title">Edit Member</div><div class="modal-close" onclick="closeModalX('member-modal-overlay')">✕</div></div>
+    <div class="form-row"><label class="form-label">Full Name</label><input class="form-input" id="mm-name"/></div>
+    <div class="form-row"><label class="form-label">Department</label><select class="form-select" id="mm-dept"></select><div class="form-hint">Departments are managed in the Admin Panel</div></div>
+    <div class="form-row"><label class="form-label">Role</label><select class="form-select" id="mm-role"><option value="member">Member</option><option value="admin">Admin</option></select></div>
+    <div class="form-row"><label class="form-label">Reporting Manager</label><select class="form-select" id="mm-manager"></select><div class="form-hint">This person can see all of this member's projects &amp; PARA. Anyone with reports gets a “My Team” dashboard.</div></div>
+    <div class="form-row"><label class="form-label">Status</label><select class="form-select" id="mm-status"><option value="active">Active</option><option value="pending">Pending Approval</option><option value="suspended">Suspended</option></select></div>
+    <input type="hidden" id="mm-uid"/>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModalX('member-modal-overlay')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveMemberEdit()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script>
+// ═══════════ FIREBASE CONFIG ═══════════
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyBj_HiNQxa3FDhtrOju-l6SMGghOJol8xk",
+  authDomain: "habbit-7754c.firebaseapp.com",
+  projectId: "habbit-7754c",
+  storageBucket: "habbit-7754c.firebasestorage.app",
+  messagingSenderId: "1072512670766",
+  appId: "1:1072512670766:web:4880a3083ff7f94571d3bf",
+  measurementId: "G-B6T9ENVX2V"
+};
+const DB_URL_KEY = 'habbit_db_url';
+const DEFAULT_DB_URL = 'https://habbit-7754c-default-rtdb.firebaseio.com';
+
+let app, auth, db;
+
+function firebaseLoaded() {
+  return typeof firebase !== 'undefined' && firebase.initializeApp;
+}
+
+function showFirebaseLoadError() {
+  document.body.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;background:#1e293b;padding:16px">
+      <div style="background:#fff;border-radius:16px;padding:36px;max-width:520px;font-family:system-ui,sans-serif">
+        <h2 style="font-size:20px;margin-bottom:12px">⚠️ Firebase scripts didn't load</h2>
+        <p style="font-size:14px;color:#475569;line-height:1.7;margin-bottom:14px">Habbit couldn't reach the Firebase servers. Common causes:</p>
+        <ol style="font-size:14px;color:#334155;line-height:2;padding-left:20px;margin-bottom:16px">
+          <li><strong>App preview blocking scripts</strong> — download the file and open in Chrome/Edge/Firefox directly.</li>
+          <li><strong>No internet connection.</strong></li>
+          <li><strong>Firewall/ad-blocker blocking</strong> <code>gstatic.com</code>.</li>
+        </ol>
+        <button onclick="location.reload()" style="width:100%;padding:12px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer">🔄 Retry</button>
+      </div>
+    </div>`;
+}
+
+function initFirebase(dbUrl) {
+  if (!firebaseLoaded()) { showFirebaseLoadError(); return false; }
+  if (app) return true;
+  try {
+    app = firebase.initializeApp({ ...FIREBASE_CONFIG, databaseURL: dbUrl });
+    auth = firebase.auth();
+    db = firebase.database();
+    return true;
+  } catch(e) { console.error('Firebase init error:', e); return false; }
+}
+
+// ═══════════ GLOBAL STATE ═══════════
+let currentUser = null, currentProfile = null;
+let allUsers = {}, allProjects = {}, allTasks = {}, allAreas = {}, allResources = {}, allFolders = {}, allEvents = {}, allSubprojects = {};
+let allDepts = [];
+let currentPage = 'dashboard';
+let unsubListeners = [];
+let projModalAssignees = [];
+let activeFolder = '';       // resources filter
+let calYear = 0, calMonth = 0; // calendar view state
+let chatActiveProj = null, chatListener = null;
+let projNav = { level:'list', pid:null, spid:null, tid:null }; // drill-down state
+let taskViewPref = 'tiles';   // tiles | table | kanban (per-user default)
+let mgrViewUid = null;        // manager dashboard: which report is being viewed
+let isAdmin = () => currentProfile && currentProfile.role === 'admin';
+
+// ── access scoping (private-by-default PARA + manager oversight) ──
+function myUid() { return currentUser ? currentUser.uid : null; }
+function myReports() { return Object.entries(allUsers).filter(([uid,u]) => u.reportingManager === myUid()).map(([uid]) => uid); }
+function hasReports() { return myReports().length > 0; }
+function projectsOfUser(uid) { return Object.entries(allProjects).filter(([,p]) => !p.archived && (p.createdBy === uid || (p.assignees||[]).includes(uid))); }
+function archivedProjectsOfUser(uid) { return Object.entries(allProjects).filter(([,p]) => p.archived && (p.createdBy === uid || (p.assignees||[]).includes(uid))); }
+function areasOfUser(uid) { return Object.entries(allAreas).filter(([,a]) => a.createdBy === uid || a.owner === uid); }
+function resourcesOfUser(uid) { return Object.entries(allResources).filter(([,r]) => r.createdBy === uid); }
+// what the CURRENT user sees in their own workspace (admin sees all)
+function scopedProjects() { return isAdmin() ? activeProjects() : projectsOfUser(myUid()); }
+function scopedArchivedProjects() { return isAdmin() ? archivedProjects() : archivedProjectsOfUser(myUid()); }
+function scopedAreas() { return isAdmin() ? Object.entries(allAreas) : areasOfUser(myUid()); }
+function scopedResources() { return isAdmin() ? Object.entries(allResources) : resourcesOfUser(myUid()); }
+function scopedProjectIds() { return new Set(scopedProjects().map(([id]) => id)); }
+// tasks visible to me: assigned to me, created by me, or in a project I can see
+function scopedTasks() {
+  if (isAdmin()) return activeTasks();
+  const me = myUid(); const ids = scopedProjectIds();
+  return activeTasks().filter(([,t]) => t.assignee === me || t.createdBy === me || (t.projectId && ids.has(t.projectId)));
+}
+// can the current user edit/archive a given project? (owner or admin)
+function canEditProject(pid) { const p = allProjects[pid]; return !!p && (isAdmin() || p.createdBy === myUid()); }
+// can the current user SEE a project (for drill-in from manager dashboard etc.)
+function canSeeProject(pid) {
+  const p = allProjects[pid]; if (!p) return false;
+  if (isAdmin()) return true;
+  const me = myUid();
+  if (p.createdBy === me || (p.assignees||[]).includes(me)) return true;
+  const stakeholders = [p.createdBy, ...(p.assignees||[])].filter(Boolean);
+  return stakeholders.some(uid => allUsers[uid] && allUsers[uid].reportingManager === me);
+}
+
+// ═══════════ STARTUP ═══════════
+document.addEventListener('DOMContentLoaded', () => {
+  const savedUrl = localStorage.getItem(DB_URL_KEY);
+  startWithUrl(savedUrl || DEFAULT_DB_URL, !savedUrl);
+  const now = new Date();
+  calYear = now.getFullYear(); calMonth = now.getMonth();
+});
+
+function startWithUrl(url, silent = false) {
+  const ok = initFirebase(url);
+  if (!ok) {
+    if (firebaseLoaded() && !silent) showDbConfigOverlay();
+    return;
+  }
+  auth.onAuthStateChanged(user => {
+    if (user) { currentUser = user; loadProfileAndGo(user); }
+    else showAuthScreen();
+  });
+  if (db) {
+    db.ref('.info/connected').once('value')
+      .then(() => localStorage.setItem(DB_URL_KEY, url))
+      .catch(() => showDbConfigOverlay());
+  }
+}
+
+function showDbConfigOverlay() { document.getElementById('db-config-overlay').style.display = 'flex'; }
+function saveDatabaseUrl() {
+  const url = document.getElementById('db-url-input').value.trim();
+  if (!url.startsWith('https://')) { toast('Please enter a valid database URL','error'); return; }
+  localStorage.setItem(DB_URL_KEY, url);
+  location.reload();
+}
+function tryDefaultUrl() {
+  document.getElementById('db-url-input').value = DEFAULT_DB_URL;
+  saveDatabaseUrl();
+}
+
+// ═══════════ AUTH ═══════════
+function showAuthScreen() {
+  document.getElementById('auth-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+}
+function setAuthErr(msg) { document.getElementById('auth-err').textContent = msg; }
+
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  if (!email || !pass) { setAuthErr('Email and password required'); return; }
+  setAuthErr('Signing in…');
+  try { await auth.signInWithEmailAndPassword(email, pass); }
+  catch(e) { setAuthErr(friendlyAuthError(e)); }
+}
+
+function friendlyAuthError(e) {
+  const m = {
+    'auth/user-not-found':'No account with that email',
+    'auth/wrong-password':'Incorrect password',
+    'auth/invalid-credential':'Incorrect email or password',
+    'auth/email-already-in-use':'Email already registered',
+    'auth/invalid-email':'Invalid email address',
+    'auth/too-many-requests':'Too many attempts — try later',
+    'auth/network-request-failed':'Network error — check your internet connection',
+    'auth/configuration-not-found':'⚙️ Setup needed: enable Email/Password in Firebase Console → Authentication → Sign-in method.'
+  };
+  return m[e.code] || e.message;
+}
+
+async function doLogout() {
+  await auth.signOut();
+  unsubListeners.forEach(fn => fn()); unsubListeners = [];
+  if (chatListener && chatActiveProj) { db.ref(`chats/${chatActiveProj}`).off('value', chatListener); chatListener = null; }
+  currentUser = null; currentProfile = null;
+  allUsers = {}; allProjects = {}; allTasks = {}; allAreas = {}; allResources = {}; allFolders = {}; allEvents = {};
+  showAuthScreen();
+}
+
+async function loadProfileAndGo(user) {
+  try {
+    const snap = await db.ref(`users/${user.uid}`).once('value');
+    if (!snap.exists()) {
+      const profile = { name: user.email.split('@')[0], email: user.email, dept:'', role:'member', status:'active', createdAt: Date.now() };
+      await db.ref(`users/${user.uid}`).set(profile);
+      currentProfile = profile;
+    } else currentProfile = snap.val();
+
+    taskViewPref = (currentProfile.prefs && currentProfile.prefs.taskView) || 'tiles';
+
+    // Self-heal: if the whole team has no admin, promote this user.
+    // (Covers accounts created before the database was set up.)
+    if (currentProfile.role !== 'admin') {
+      const allSnap = await db.ref('users').once('value');
+      const users = allSnap.val() || {};
+      const adminExists = Object.values(users).some(u => u.role === 'admin');
+      if (!adminExists) {
+        await db.ref(`users/${user.uid}/role`).set('admin');
+        currentProfile.role = 'admin';
+        setTimeout(() => toast('You are now the team Admin ⭐ (no admin existed yet)', 'success'), 800);
+      }
+    }
+
+    showApp(); startListeners(); navTo('dashboard');
+  } catch(e) { console.error(e); showDbConfigOverlay(); }
+}
+
+// ═══════════ APP SHELL + ROLE-BASED NAV ═══════════
+const NAV_ADMIN = [
+  { id:'metrics',   icon:'📊', label:'Employee Metrics' },
+  { id:'dashboard', icon:'🏠', label:'Dashboard' },
+  { id:'projects',  icon:'📁', label:'Projects' },
+  { id:'areas',     icon:'🔄', label:'Areas' },
+  { id:'resources', icon:'📚', label:'Resources' },
+  { id:'archives',  icon:'📦', label:'Archives' },
+  { id:'calendar',  icon:'🗓️', label:'Calendar' },
+  { id:'chat',      icon:'💬', label:'Chat' },
+  { id:'admin',     icon:'⚙️', label:'Admin Panel' },
+  { id:'master',    icon:'🔑', label:'Admin Master' },
+];
+const NAV_MEMBER = NAV_ADMIN.filter(n => !['metrics','admin','master'].includes(n.id));
+const NAV_MYTEAM = { id:'myteam', icon:'🧑‍💼', label:'My Team' };
+
+function buildSidebar() {
+  const nav = isAdmin() ? [...NAV_ADMIN] : [...NAV_MEMBER];
+  if (hasReports()) {
+    const i = nav.findIndex(n => n.id === 'dashboard');
+    nav.splice(i + 1, 0, NAV_MYTEAM);
+  }
+  document.getElementById('sb-nav').innerHTML = nav.map(n =>
+    `<div class="nav-item ${n.id===currentPage?'active':''}" data-page="${n.id}" onclick="navTo('${n.id}')"><span class="ni">${n.icon}</span>${n.label}</div>`).join('');
+}
+
+function showApp() {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('sb-user-name').textContent = currentProfile.name || currentUser.email;
+  const roleLabel = isAdmin() ? '⭐ Admin' : (hasReports() ? '🧑‍💼 Manager' : 'Member');
+  document.getElementById('sb-user-role').textContent = roleLabel + (currentProfile.dept ? ' · ' + currentProfile.dept : '');
+  buildSidebar();
+}
+
+// ═══════════ REALTIME LISTENERS ═══════════
+function listen(path, assign, pages) {
+  const ref = db.ref(path);
+  const h = snap => {
+    assign(snap.val() || {});
+    if (pages.includes(currentPage) || pages.includes('*')) renderCurrentPage();
+  };
+  ref.on('value', h);
+  unsubListeners.push(() => ref.off('value', h));
+}
+
+function startListeners() {
+  listen('users', v => { allUsers = v; if (currentProfile) { buildSidebar(); document.getElementById('sb-user-role').textContent = (isAdmin()?'⭐ Admin':(hasReports()?'🧑‍💼 Manager':'Member')) + (currentProfile.dept?' · '+currentProfile.dept:''); } }, ['metrics','admin','dashboard','chat','myteam']);
+  listen('projects', v => { allProjects = v; }, ['dashboard','projects','archives','calendar','chat','metrics','myteam']);
+  listen('subprojects', v => { allSubprojects = v; }, ['dashboard','projects','archives','calendar','metrics','myteam']);
+  listen('tasks', v => { allTasks = v; }, ['dashboard','projects','archives','calendar','metrics','myteam']);
+  listen('areas', v => { allAreas = v; }, ['areas','dashboard','calendar','myteam']);
+  listen('resources', v => { allResources = v; }, ['resources','myteam']);
+  listen('resourceFolders', v => { allFolders = v; }, ['resources']);
+  listen('events', v => { allEvents = v; }, ['calendar','dashboard']);
+  const deptRef = db.ref('config/departments');
+  const dh = snap => {
+    const v = snap.val();
+    allDepts = v ? Object.values(v) : [];
+    if (['admin','metrics','projects'].includes(currentPage)) renderCurrentPage();
+  };
+  deptRef.on('value', dh);
+  unsubListeners.push(() => deptRef.off('value', dh));
+}
+
+// ═══════════ NAVIGATION ═══════════
+function navTo(page) {
+  // leaving chat → detach chat listener
+  if (currentPage === 'chat' && page !== 'chat' && chatListener && chatActiveProj) {
+    db.ref(`chats/${chatActiveProj}`).off('value', chatListener); chatListener = null;
+  }
+  detachPageComments(); // detach any page-level comment listener when navigating
+  // fresh sidebar click on Projects resets the drill-down to the list
+  if (page === 'projects') { projNav = { level:'list', pid:null, spid:null, tid:null }; }
+  if (page === 'myteam') { mgrViewUid = null; }
+  currentPage = page;
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.page === page));
+  const titles = { metrics:'Employee Metrics', dashboard:'Dashboard', myteam:'My Team', projects:'Projects', areas:'Areas', resources:'Resources', archives:'Archives', calendar:'Calendar', chat:'Chat', admin:'Admin Panel', master:'Admin Master' };
+  document.getElementById('topbar-title').textContent = titles[page] || page;
+  hideSearchResults();
+  renderCurrentPage();
+}
+
+function renderCurrentPage() {
+  switch(currentPage) {
+    case 'metrics':   renderMetricsPage(); break;
+    case 'dashboard': renderDashboard(); break;
+    case 'myteam':    renderManagerDashboard(); break;
+    case 'projects':  renderProjectsPage(); break;
+    case 'areas':     renderAreasPage(); break;
+    case 'resources': renderResourcesPage(); break;
+    case 'archives':  renderArchivesPage(); break;
+    case 'calendar':  renderCalendarPage(); break;
+    case 'chat':      renderChatPage(); break;
+    case 'admin':     renderAdminPage(); break;
+    case 'master':    renderAdminMasterPage(); break;
+  }
+}
+
+// ═══════════ GLOBAL SEARCH ═══════════
+function runGlobalSearch() {
+  const q = document.getElementById('global-search').value.trim().toLowerCase();
+  const box = document.getElementById('search-results');
+  if (!q || q.length < 2) { hideSearchResults(); return; }
+
+  const results = [];
+  // search only within what I'm allowed to see
+  const visProjects = isAdmin() ? Object.entries(allProjects) : Object.entries(allProjects).filter(([id]) => canSeeProject(id));
+  const visPidSet = new Set(visProjects.map(([id])=>id));
+  visProjects.forEach(([id,p]) => {
+    if ((p.title||'').toLowerCase().includes(q) || (p.desc||'').toLowerCase().includes(q))
+      results.push({ group:'Projects', icon: p.archived?'📦':'📁', title:p.title, sub:(p.archived?'Archived · ':'')+(p.dept||'Cross-functional'), act:`openDetail('project','${id}')` });
+  });
+  Object.entries(allSubprojects).forEach(([id,s]) => {
+    if (!isAdmin() && !visPidSet.has(s.projectId)) return;
+    if ((s.title||'').toLowerCase().includes(q) || (s.desc||'').toLowerCase().includes(q)) {
+      const parent = allProjects[s.projectId];
+      results.push({ group:'Sub-projects', icon: s.archived?'📦':'📂', title:s.title, sub:(s.archived?'Archived · ':'')+(parent?parent.title:''), act:`openDetail('subproject','${id}')` });
+    }
+  });
+  Object.entries(allTasks).forEach(([id,t]) => {
+    const visible = isAdmin() || t.assignee===myUid() || t.createdBy===myUid() || (t.projectId && visPidSet.has(t.projectId));
+    if (!visible) return;
+    if ((t.title||'').toLowerCase().includes(q))
+      results.push({ group:'Tasks', icon: t.status==='done'?'✅':'☑️', title:t.title, sub:t.status, act:`openDetail('task','${id}')` });
+    subtasksOf(t).forEach(([stid,st]) => {
+      if ((st.title||'').toLowerCase().includes(q))
+        results.push({ group:'Subtasks', icon: st.status==='done'?'✅':'☑️', title:st.title, sub:'in "'+(t.title||'')+'"', act:`openDetail('task','${id}')` });
+    });
+  });
+  scopedAreas().forEach(([id,a]) => {
+    if ((a.title||'').toLowerCase().includes(q))
+      results.push({ group:'Areas', icon:'🔄', title:a.title, sub:a.dept||'', act:`navTo('areas')` });
+  });
+  scopedResources().forEach(([id,r]) => {
+    if ((r.title||'').toLowerCase().includes(q))
+      results.push({ group:'Resources', icon:{link:'🔗',note:'📝',file:'📄'}[r.type]||'📚', title:r.title, sub:r.type, act:`navTo('resources')` });
+  });
+  Object.entries(allEvents).forEach(([id,ev]) => {
+    if ((ev.title||'').toLowerCase().includes(q))
+      results.push({ group:'Meetings', icon:'🗓️', title:ev.title, sub:ev.date, act:`openMeetingModal('${id}')` });
+  });
+
+  if (!results.length) {
+    box.innerHTML = '<div style="padding:16px;font-size:13px;color:var(--gray5);text-align:center">No matches found</div>';
+    box.classList.add('open');
+    return;
+  }
+  let html = '', lastGroup = '';
+  results.slice(0,20).forEach(r => {
+    if (r.group !== lastGroup) { html += `<div class="sr-group">${r.group}</div>`; lastGroup = r.group; }
+    html += `<div class="sr-item" onclick="hideSearchResults();${r.act}">
+      <span class="sr-icon">${r.icon}</span>
+      <span class="sr-text"><div class="sr-title">${esc(r.title)}</div><div class="sr-sub">${esc(r.sub)}</div></span>
+    </div>`;
+  });
+  box.innerHTML = html;
+  box.classList.add('open');
+}
+function hideSearchResults() {
+  const box = document.getElementById('search-results');
+  if (box) box.classList.remove('open');
+}
+
+// ═══════════ ACTIVE-DATA HELPERS ═══════════
+function activeProjects() { return Object.entries(allProjects).filter(([,p]) => !p.archived); }
+function archivedProjects() { return Object.entries(allProjects).filter(([,p]) => p.archived); }
+function activeTasks() { return Object.entries(allTasks).filter(([,t]) => !t.archived && t.status !== 'done'); }
+function closedTasks() { return Object.entries(allTasks).filter(([,t]) => t.archived || t.status === 'done'); }
+
+// ── Sub-project + subtask hierarchy helpers ──
+function activeSubprojects(pid) { return Object.entries(allSubprojects).filter(([,s]) => s.projectId === pid && !s.archived); }
+// direct tasks = tasks on a project NOT inside a sub-project
+function directTasksOfProject(pid) { return Object.entries(allTasks).filter(([,t]) => t.projectId === pid && !t.subprojectId && !t.archived); }
+function tasksOfSubproject(spid) { return Object.entries(allTasks).filter(([,t]) => t.subprojectId === spid && !t.archived); }
+function subtasksOf(t) { return t && t.subtasks ? Object.entries(t.subtasks) : []; }
+
+// progress roll-up
+function taskProgress(t) {
+  const subs = subtasksOf(t);
+  if (subs.length) { const d = subs.filter(([,s]) => s.status === 'done').length; return Math.round(d/subs.length*100); }
+  return t.status === 'done' ? 100 : 0;
+}
+function subprojectProgress(spid) {
+  const ts = tasksOfSubproject(spid);
+  if (!ts.length) return 0;
+  return Math.round(ts.reduce((a,[,t]) => a + taskProgress(t), 0) / ts.length);
+}
+function projectAutoProgress(pid) {
+  const units = [];
+  directTasksOfProject(pid).forEach(([,t]) => units.push(taskProgress(t)));
+  activeSubprojects(pid).forEach(([spid]) => units.push(subprojectProgress(spid)));
+  if (!units.length) return null; // no children → fall back to manual
+  return Math.round(units.reduce((a,b) => a+b, 0) / units.length);
+}
+function projectDisplayProgress(pid, p) {
+  const auto = projectAutoProgress(pid);
+  return auto === null ? (p.progress || 0) : auto;
+}
+// yields every assignable work unit (task + each subtask) for metrics
+function forEachWorkUnit(cb) {
+  Object.entries(allTasks).forEach(([tid,t]) => {
+    cb({ assignee: t.assignee, status: t.status, due: t.due, completedAt: t.completedAt, projectId: t.projectId, archived: !!t.archived });
+    subtasksOf(t).forEach(([,s]) => cb({ assignee: s.assignee, status: s.status, due: s.due, completedAt: s.completedAt, projectId: t.projectId, archived: !!t.archived }));
+  });
+}
+
+// ═══════════ DASHBOARD ═══════════
+function renderDashboard() {
+  const body = document.getElementById('page-body');
+  const myUid = currentUser.uid;
+  const tToday = today();
+
+  const open = scopedTasks();
+  const myTasks = open.filter(([,t]) => t.assignee === myUid);
+  const dueToday = open.filter(([,t]) => t.due === tToday);
+  const overdue = open.filter(([,t]) => t.due && t.due < tToday);
+  const actProj = scopedProjects().filter(([,p]) => p.status === 'active');
+
+  // routines due today or overdue (from my areas)
+  const routinesDue = [];
+  scopedAreas().forEach(([aid,a]) => {
+    Object.entries(a.routines||{}).forEach(([rid,r]) => {
+      if (r.nextDue && r.nextDue <= tToday) routinesDue.push({aid, rid, area:a.title, ...r});
+    });
+  });
+
+  // today's meetings
+  const meetsToday = Object.entries(allEvents).filter(([,ev]) => ev.date === tToday)
+    .sort((a,b) => (a[1].time||'').localeCompare(b[1].time||''));
+
+  db.ref('activity').orderByChild('createdAt').limitToLast(10).once('value', snap => {
+    const acts = []; snap.forEach(c => acts.unshift({id:c.key,...c.val()}));
+    const el = document.getElementById('dash-feed');
+    if (el) el.innerHTML = acts.length ? acts.map(a => `<div class="feed-item">
+      <div class="feed-icon">${actIcon(a.type)}</div>
+      <div class="feed-content"><div class="feed-text">${esc(a.msg)}</div><div class="feed-time">${relTime(a.createdAt)}</div></div>
+    </div>`).join('') : '<p style="color:var(--gray5);font-size:13px;padding:10px 0">No activity yet</p>';
+  });
+
+  document.getElementById('topbar-actions').innerHTML =
+    `<button class="btn btn-primary btn-sm" onclick="openTaskModal()">＋ Task</button>`;
+
+  body.innerHTML = `
+    <div class="stat-grid">
+      <div class="stat-card amber"><div class="stat-val">${dueToday.length}</div><div class="stat-label">Due Today</div></div>
+      <div class="stat-card red"><div class="stat-val">${overdue.length}</div><div class="stat-label">Overdue</div></div>
+      <div class="stat-card"><div class="stat-val">${myTasks.length}</div><div class="stat-label">My Open Tasks</div></div>
+      <div class="stat-card green"><div class="stat-val">${actProj.length}</div><div class="stat-label">Active Projects</div></div>
+      <div class="stat-card teal"><div class="stat-val">${routinesDue.length}</div><div class="stat-label">Routines Due</div></div>
+      <div class="stat-card purple"><div class="stat-val">${meetsToday.length}</div><div class="stat-label">Meetings Today</div></div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 330px;gap:20px">
+      <div>
+        ${overdue.length ? `<div class="section-header"><div class="section-title" style="color:var(--red)">⚠️ Overdue</div></div>
+          <div id="dash-overdue">${overdue.map(([id,t])=>taskRowHtml(id,t)).join('')}</div>` : ''}
+
+        <div class="section-header"><div><div class="section-title">Due Today</div></div></div>
+        <div id="dash-due-today">${dueToday.length ? dueToday.map(([id,t])=>taskRowHtml(id,t)).join('') : '<p style="color:var(--gray5);font-size:13px;margin-bottom:14px">Nothing due today 🎉</p>'}</div>
+
+        ${routinesDue.length ? `<div class="section-header" style="margin-top:20px"><div class="section-title">🔄 Routines Due</div></div>
+          ${routinesDue.map(r => `<div class="routine-row" style="background:var(--white);box-shadow:var(--shadow)">
+            <div class="task-check" onclick="completeRoutine('${r.aid}','${r.rid}')" title="Mark done"></div>
+            <div style="flex:1"><div style="font-weight:600">${esc(r.title)}</div><div style="font-size:11px;color:var(--gray5)">${esc(r.area)}</div></div>
+            <span class="r-freq">${r.freq}</span>
+            <span class="badge ${r.nextDue < tToday ? 'badge-red':'badge-amber'}">${fmtDate(r.nextDue)}</span>
+          </div>`).join('')}` : ''}
+
+        <div class="section-header" style="margin-top:20px"><div class="section-title">My Tasks</div></div>
+        <div id="dash-my-tasks">${myTasks.length ? myTasks.slice(0,6).map(([id,t])=>taskRowHtml(id,t)).join('') : '<p style="color:var(--gray5);font-size:13px">No tasks assigned to you</p>'}</div>
+      </div>
+
+      <div>
+        <div class="section-header"><div class="section-title">🗓️ Today's Meetings</div></div>
+        <div class="card" style="padding:12px;margin-bottom:18px">
+          ${meetsToday.length ? meetsToday.map(([id,ev]) => `
+            <div style="display:flex;gap:10px;align-items:center;padding:8px;border-radius:8px;cursor:pointer" onclick="openMeetingModal('${id}')">
+              <span class="badge badge-purple">${ev.time||'—'}</span>
+              <span style="font-size:13px;font-weight:600">${esc(ev.title)}</span>
+            </div>`).join('') : '<p style="color:var(--gray5);font-size:13px;padding:6px">No meetings today</p>'}
+        </div>
+        <div class="section-header"><div class="section-title">Activity Feed</div></div>
+        <div class="card" style="padding:4px 14px"><div id="dash-feed"></div></div>
+      </div>
+    </div>`;
+
+  bindTaskChecks(body);
+}
+
+function taskRowHtml(id, t) {
+  const done = t.status === 'done';
+  const assignee = t.assignee && allUsers[t.assignee] ? allUsers[t.assignee].name : '';
+  const proj = t.projectId && allProjects[t.projectId] ? allProjects[t.projectId].title : '';
+  return `<div class="task-row" onclick="openDetail('task','${id}')">
+    <div class="task-check ${done?'done':''}" data-id="${id}">${done?'✓':''}</div>
+    <div style="flex:1;min-width:0">
+      <div class="task-title ${done?'done':''}">${esc(t.title)}</div>
+      ${proj ? `<div style="font-size:11px;color:var(--gray5)">📁 ${esc(proj)}</div>` : ''}
+    </div>
+    <div class="task-row-meta">
+      ${priorityBadge(t.priority)}
+      ${assignee ? `<span class="badge badge-gray">${esc(assignee)}</span>` : ''}
+      ${t.due ? `<span class="badge ${t.due < today() && !done ? 'badge-red':'badge-gray'}">${fmtDate(t.due)}</span>` : ''}
+    </div>
+  </div>`;
+}
+
+function bindTaskChecks(root) {
+  root.querySelectorAll('.task-check[data-id]').forEach(el => {
+    el.addEventListener('click', e => { e.stopPropagation(); toggleTaskDone(el.dataset.id); });
+  });
+}
+
+// ═══════════ PROJECTS (full-page drill-down) ═══════════
+function renderProjectsPage() {
+  switch (projNav.level) {
+    case 'project':    return renderProjectPage();
+    case 'subproject': return renderSubprojectPage();
+    case 'task':       return renderTaskPage();
+    default:           return renderProjectsList();
+  }
+}
+
+function setProjectsActiveNav() {
+  currentPage = 'projects';
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.page === 'projects'));
+  document.getElementById('topbar-title').textContent = 'Projects';
+}
+function openProjectPage(pid) { detachPageComments(); projNav = { level:'project', pid, spid:null, tid:null }; setProjectsActiveNav(); renderProjectsPage(); }
+function openSubprojectPage(spid) { const s = allSubprojects[spid]; if (!s) return; detachPageComments(); projNav = { level:'subproject', pid:s.projectId, spid, tid:null }; setProjectsActiveNav(); renderProjectsPage(); }
+function openTaskPage(tid) { const t = allTasks[tid]; if (!t) return; detachPageComments(); projNav = { level:'task', pid:t.projectId||null, spid:t.subprojectId||null, tid }; setProjectsActiveNav(); renderProjectsPage(); }
+function backToProjectsList() { detachPageComments(); projNav = { level:'list', pid:null, spid:null, tid:null }; renderProjectsPage(); }
+
+function breadcrumbHtml() {
+  const parts = [`<span class="crumb" onclick="backToProjectsList()">📁 Projects</span>`];
+  if (projNav.pid && allProjects[projNav.pid]) parts.push(`<span class="crumb ${projNav.level==='project'?'current':''}" onclick="openProjectPage('${projNav.pid}')">${esc(allProjects[projNav.pid].title)}</span>`);
+  if (projNav.spid && allSubprojects[projNav.spid]) parts.push(`<span class="crumb ${projNav.level==='subproject'?'current':''}" onclick="openSubprojectPage('${projNav.spid}')">${esc(allSubprojects[projNav.spid].title)}</span>`);
+  if (projNav.tid && allTasks[projNav.tid]) parts.push(`<span class="crumb current">${esc(allTasks[projNav.tid].title)}</span>`);
+  return `<div class="breadcrumb">${parts.join('<span class="crumb-sep">/</span>')}</div>`;
+}
+
+// ── Level 1: project list ──
+function renderProjectsList() {
+  const body = document.getElementById('page-body');
+  document.getElementById('topbar-actions').innerHTML =
+    `<button class="btn btn-primary btn-sm" onclick="openProjModal()">＋ New Project</button>`;
+  const projects = scopedProjects();
+  body.innerHTML = `
+    <div class="section-sub" style="margin-bottom:14px">${isAdmin() ? 'All team projects.' : 'Your projects and ones you collaborate on. Only you, your collaborators, and your reporting manager can see these.'}</div>
+    <div class="filter-bar">
+      <input type="text" id="proj-search" placeholder="Filter projects…" oninput="filterProjects()"/>
+      <select id="proj-filter-dept" onchange="filterProjects()">
+        <option value="">All Departments</option>
+        ${allDepts.map(d=>`<option value="${esc(d)}">${esc(d)}</option>`).join('')}
+      </select>
+      <select id="proj-filter-status" onchange="filterProjects()">
+        <option value="">All Statuses</option>
+        <option value="planning">Planning</option><option value="active">Active</option>
+        <option value="on-hold">On Hold</option><option value="review">In Review</option><option value="done">Done</option>
+      </select>
+    </div>
+    <div class="card-grid" id="proj-grid">
+      ${projects.length ? projects.map(([id,p]) => projCardHtml(id,p)).join('') : emptyState('📁','No projects yet','Create your first project with the ＋ New Project button')}
+    </div>`;
+}
+
+function projCardHtml(id, p) {
+  const pct = projectDisplayProgress(id, p);
+  const avatars = (p.assignees||[]).slice(0,4).map(uid => allUsers[uid] ? `<div class="avatar" title="${esc(allUsers[uid].name)}">${initials(allUsers[uid].name)}</div>` : '').join('');
+  const projTasks = Object.values(allTasks).filter(t => t.projectId === id && !t.archived);
+  const doneCt = projTasks.filter(t => t.status==='done').length;
+  const spCount = activeSubprojects(id).length;
+  const metaBits = [];
+  if (spCount) metaBits.push(`${spCount} sub-project${spCount!==1?'s':''}`);
+  metaBits.push(`${doneCt}/${projTasks.length} tasks`);
+  return `<div class="proj-card" onclick="openProjectPage('${id}')">
+    <div class="proj-card-header">
+      <div><div class="proj-title">${esc(p.title)}</div><div class="proj-dept">${esc(p.dept||'Cross-functional')}</div></div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px">${statusBadge(p.status)}${priorityBadge(p.priority)}</div>
+    </div>
+    ${p.desc ? `<div class="proj-desc">${esc(p.desc)}</div>` : ''}
+    <div><div class="progress-bar"><div class="progress-fill ${pct>=100?'green':''}" style="width:${pct}%"></div></div>
+    <div class="progress-pct">${pct}% · ${metaBits.join(' · ')}</div></div>
+    <div class="proj-meta">
+      ${p.due ? `<span class="badge badge-gray">📅 ${fmtDate(p.due)}</span>` : ''}
+      <div style="display:flex;margin-left:auto">${avatars}</div>
+      ${canEditProject(id) ? `<div style="display:flex;gap:2px" onclick="event.stopPropagation()">
+        <button class="btn-icon btn" title="Edit" onclick="openProjModal('${id}')">✏️</button>
+        <button class="btn-icon btn" title="Archive" onclick="archiveProject('${id}')">📦</button>
+      </div>` : ''}
+    </div>
+  </div>`;
+}
+
+function filterProjects() {
+  const q = (document.getElementById('proj-search').value||'').toLowerCase();
+  const dept = document.getElementById('proj-filter-dept').value;
+  const status = document.getElementById('proj-filter-status').value;
+  const cards = scopedProjects().filter(([,p]) => {
+    if (q && !(p.title||'').toLowerCase().includes(q)) return false;
+    if (dept && p.dept !== dept) return false;
+    if (status && p.status !== status) return false;
+    return true;
+  });
+  document.getElementById('proj-grid').innerHTML = cards.length
+    ? cards.map(([id,p]) => projCardHtml(id,p)).join('')
+    : emptyState('🔍','No projects match','Try a different filter');
+}
+
+// ── Level 2: project drill page (sub-projects + direct tasks) ──
+function renderProjectPage() {
+  const body = document.getElementById('page-body');
+  const pid = projNav.pid;
+  const p = allProjects[pid];
+  if (!p) { backToProjectsList(); return; }
+  document.getElementById('topbar-actions').innerHTML = '';
+  const subs = activeSubprojects(pid);
+  const directTasks = directTasksOfProject(pid);
+  const auto = projectAutoProgress(pid);
+  const dispPct = auto === null ? (p.progress||0) : auto;
+
+  body.innerHTML = `
+    ${breadcrumbHtml()}
+    <div class="page-head">
+      <div class="page-head-top">
+        <div>
+          <h1>${esc(p.title)}</h1>
+          <div class="ph-badges">
+            ${statusBadge(p.status)} ${priorityBadge(p.priority)}
+            ${p.dept ? `<span class="badge badge-blue">${esc(p.dept)}</span>` : ''}
+            ${p.due ? `<span class="badge badge-gray">📅 Due ${fmtDate(p.due)}</span>` : ''}
+          </div>
+        </div>
+        <div class="ph-actions">
+          ${!canEditProject(pid) ? `<span class="badge badge-purple" title="You are viewing this as the reporting manager">🧑‍💼 Manager view</span>` : ''}
+          <button class="btn btn-ghost btn-sm" onclick="exportProjectCsv('${pid}')">⬇ Export CSV</button>
+          ${canEditProject(pid) ? `<button class="btn btn-ghost btn-sm" onclick="openProjModal('${pid}')">✏️ Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="archiveProject('${pid}')">📦 Archive</button>` : ''}
+        </div>
+      </div>
+      ${p.desc ? `<div class="ph-desc">${esc(p.desc)}</div>` : ''}
+      <div style="margin-top:14px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;color:var(--gray6);margin-bottom:5px">
+          <span>PROGRESS ${auto!==null?'<span style="font-weight:400;text-transform:none">(auto from tasks)</span>':''}</span><span style="color:var(--brand)">${dispPct}%</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill ${dispPct>=100?'green':''}" style="width:${dispPct}%"></div></div>
+      </div>
+      ${teamBlockHtml(p.assignees)}
+    </div>
+
+    <div class="section-header">
+      <div class="section-title">📂 Sub-projects (${subs.length})</div>
+      ${canEditProject(pid) ? `<button class="btn btn-primary btn-sm" onclick="openSubprojectModal('${pid}')">＋ Sub-project</button>` : ''}
+    </div>
+    <div class="card-grid" style="margin-bottom:26px">
+      ${subs.length ? subs.map(([spid,s]) => spTileHtml(spid,s)).join('') : emptyState('📂','No sub-projects yet','Group related work into sub-projects')}
+    </div>
+
+    <div class="section-header">
+      <div class="section-title">Direct Tasks (${directTasks.length})</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        ${taskViewSwitcher()}
+        <button class="btn btn-primary btn-sm" onclick="openTaskModal(null,'${pid}','')">＋ Task</button>
+      </div>
+    </div>
+    <div id="task-collection">${renderTaskCollection(directTasks, pid, '')}</div>
+
+    ${commentsHtml()}`;
+  bindTaskCollection();
+  bindPageComments('project', pid);
+}
+
+function spTileHtml(spid, s) {
+  const prog = subprojectProgress(spid);
+  const nTasks = tasksOfSubproject(spid).length;
+  return `<div class="sp-tile" onclick="openSubprojectPage('${spid}')">
+    <div class="proj-card-header">
+      <div><div class="proj-title">📂 ${esc(s.title)}</div></div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px">${statusBadge(s.status)}${priorityBadge(s.priority)}</div>
+    </div>
+    ${s.desc ? `<div class="proj-desc">${esc(s.desc)}</div>` : ''}
+    <div class="progress-bar"><div class="progress-fill ${prog>=100?'green':''}" style="width:${prog}%"></div></div>
+    <div class="progress-pct">${prog}% · ${nTasks} task${nTasks!==1?'s':''}</div>
+    <div class="proj-meta">
+      ${s.due ? `<span class="badge badge-gray">📅 ${fmtDate(s.due)}</span>` : ''}
+      ${canEditProject(s.projectId) ? `<div style="display:flex;gap:2px;margin-left:auto" onclick="event.stopPropagation()">
+        <button class="btn-icon btn" title="Edit" onclick="openSubprojectModal('${s.projectId}','${spid}')">✏️</button>
+        <button class="btn-icon btn" title="Archive" onclick="archiveSubproject('${spid}')">📦</button></div>` : ''}
+    </div>
+  </div>`;
+}
+
+// ── Level 3: sub-project page (tasks) ──
+function renderSubprojectPage() {
+  const body = document.getElementById('page-body');
+  const spid = projNav.spid;
+  const s = allSubprojects[spid];
+  if (!s) { openProjectPage(projNav.pid); return; }
+  document.getElementById('topbar-actions').innerHTML = '';
+  const spTasks = tasksOfSubproject(spid);
+  const prog = subprojectProgress(spid);
+
+  body.innerHTML = `
+    ${breadcrumbHtml()}
+    <div class="page-head">
+      <div class="page-head-top">
+        <div>
+          <h1>📂 ${esc(s.title)}</h1>
+          <div class="ph-badges">${statusBadge(s.status)} ${priorityBadge(s.priority)} ${s.due ? `<span class="badge badge-gray">📅 Due ${fmtDate(s.due)}</span>` : ''}</div>
+        </div>
+        ${canEditProject(s.projectId) ? `<div class="ph-actions">
+          <button class="btn btn-ghost btn-sm" onclick="openSubprojectModal('${s.projectId}','${spid}')">✏️ Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="archiveSubproject('${spid}')">📦 Archive</button></div>` : ''}
+      </div>
+      ${s.desc ? `<div class="ph-desc">${esc(s.desc)}</div>` : ''}
+      <div style="margin-top:14px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;color:var(--gray6);margin-bottom:5px">
+          <span>PROGRESS <span style="font-weight:400;text-transform:none">(auto from tasks)</span></span><span style="color:var(--brand)">${prog}%</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill ${prog>=100?'green':''}" style="width:${prog}%"></div></div>
+      </div>
+      ${teamBlockHtml(s.assignees)}
+    </div>
+
+    <div class="section-header">
+      <div class="section-title">Tasks (${spTasks.length})</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        ${taskViewSwitcher()}
+        <button class="btn btn-primary btn-sm" onclick="openTaskModal(null,'${s.projectId}','${spid}')">＋ Task</button>
+      </div>
+    </div>
+    <div id="task-collection">${renderTaskCollection(spTasks, s.projectId, spid)}</div>
+
+    ${commentsHtml()}`;
+  bindTaskCollection();
+  bindPageComments('subproject', spid);
+}
+
+// ── Level 4: task page (subtasks) ──
+function renderTaskPage() {
+  const body = document.getElementById('page-body');
+  const tid = projNav.tid;
+  const t = allTasks[tid];
+  if (!t) { backToProjectsList(); return; }
+  document.getElementById('topbar-actions').innerHTML = '';
+  const assignee = t.assignee && allUsers[t.assignee] ? allUsers[t.assignee] : null;
+  const subs = subtasksOf(t);
+  const tprog = taskProgress(t);
+
+  body.innerHTML = `
+    ${breadcrumbHtml()}
+    <div class="page-head">
+      <div class="page-head-top">
+        <div>
+          <h1>${esc(t.title)}</h1>
+          <div class="ph-badges">
+            ${taskStatusBadge(t.status)} ${priorityBadge(t.priority)}
+            ${t.due ? `<span class="badge ${t.due < today() && t.status!=='done' ? 'badge-red':'badge-gray'}">📅 Due ${fmtDate(t.due)}</span>` : ''}
+            ${assignee ? `<span class="badge badge-blue">👤 ${esc(assignee.name)}</span>` : ''}
+          </div>
+        </div>
+        <div class="ph-actions">
+          <select class="form-select" style="width:auto;padding:6px 10px;font-size:13px" onchange="updateTaskStatus('${tid}',this.value)">
+            <option value="todo" ${t.status==='todo'?'selected':''}>To Do</option>
+            <option value="in-progress" ${t.status==='in-progress'?'selected':''}>In Progress</option>
+            <option value="review" ${t.status==='review'?'selected':''}>In Review</option>
+            <option value="done" ${t.status==='done'?'selected':''}>Done</option>
+          </select>
+          <button class="btn btn-ghost btn-sm" onclick="openTaskModal('${tid}')">✏️ Edit</button>
+          ${(isAdmin() || canEditProject(t.projectId) || t.createdBy===myUid()) ? `<button class="btn btn-danger btn-sm" onclick="deleteTask('${tid}')">🗑</button>` : ''}
+        </div>
+      </div>
+      ${t.desc ? `<div class="ph-desc">${esc(t.desc)}</div>` : ''}
+      <div style="margin-top:14px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;color:var(--gray6);margin-bottom:5px">
+          <span>PROGRESS <span style="font-weight:400;text-transform:none">(auto from subtasks)</span></span><span style="color:var(--brand)">${tprog}%</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill ${tprog>=100?'green':''}" style="width:${tprog}%"></div></div>
+      </div>
+    </div>
+
+    <div class="section-header">
+      <div class="section-title">☑ Subtasks (${subs.filter(([,x])=>x.status==='done').length}/${subs.length})</div>
+      <button class="btn btn-primary btn-sm" onclick="openSubtaskModal('${tid}')">＋ Add Subtask</button>
+    </div>
+    <div style="margin-bottom:22px">
+      ${subs.length ? subs.map(([stid,st])=>`
+        <div class="task-row" onclick="openSubtaskModal('${tid}','${stid}')">
+          <div class="task-check ${st.status==='done'?'done':''}" onclick="event.stopPropagation();toggleSubtaskDone('${tid}','${stid}')">${st.status==='done'?'✓':''}</div>
+          <div class="task-title ${st.status==='done'?'done':''}" style="flex:1">${esc(st.title)}</div>
+          ${st.status && st.status!=='todo' && st.status!=='done' ? taskStatusBadge(st.status) : ''}
+          ${st.assignee && allUsers[st.assignee] ? `<span class="badge badge-gray">${esc(allUsers[st.assignee].name)}</span>` : ''}
+          ${st.due ? `<span class="badge ${st.due<today()&&st.status!=='done'?'badge-red':'badge-gray'}">📅 ${fmtDate(st.due)}</span>` : ''}
+          <button class="btn-icon btn btn-sm" onclick="event.stopPropagation();deleteSubtask('${tid}','${stid}')">✕</button>
+        </div>`).join('') : emptyState('☑','No subtasks','Break this task into time-bound steps')}
+    </div>
+
+    ${commentsHtml()}`;
+  bindPageComments('task', tid);
+}
+
+// ── VIEW SWITCHER + task collection (tiles / table / kanban) ──
+function taskViewSwitcher() {
+  const labels = { tiles:'▦ Tiles', table:'▤ Table', kanban:'▥ Kanban' };
+  return `<div class="view-switch" title="Your choice is saved as default">
+    ${['tiles','table','kanban'].map(x=>`<button class="vs-btn ${taskViewPref===x?'active':''}" onclick="setTaskView('${x}')">${labels[x]}</button>`).join('')}
+  </div>`;
+}
+function setTaskView(v) {
+  taskViewPref = v;
+  if (currentUser) db.ref(`users/${currentUser.uid}/prefs/taskView`).set(v);
+  renderProjectsPage();
+}
+
+function renderTaskCollection(tasks, pid, spid) {
+  if (!tasks.length) return `<div class="card" style="text-align:center;color:var(--gray5);font-size:13px;padding:26px">No tasks yet — add one with the ＋ Task button</div>`;
+  if (taskViewPref === 'table') return taskTableHtml(tasks);
+  if (taskViewPref === 'kanban') return taskKanbanHtml(tasks);
+  return taskTilesHtml(tasks);
+}
+
+function taskTilesHtml(tasks) {
+  return `<div class="card-grid" style="grid-template-columns:repeat(auto-fill,minmax(260px,1fr))">
+    ${tasks.map(([tid,t]) => {
+      const subs = subtasksOf(t); const tp = taskProgress(t);
+      const an = t.assignee && allUsers[t.assignee] ? allUsers[t.assignee].name : '';
+      return `<div class="proj-card" onclick="openTaskPage('${tid}')">
+        <div class="proj-card-header">
+          <div class="proj-title" style="font-size:14px">${esc(t.title)}</div>
+          <div>${taskStatusBadge(t.status)}</div>
+        </div>
+        <div class="ph-badges" style="margin-top:0;margin-bottom:8px">
+          ${priorityBadge(t.priority)}
+          ${t.due ? `<span class="badge ${t.due<today()&&t.status!=='done'?'badge-red':'badge-gray'}">📅 ${fmtDate(t.due)}</span>` : ''}
+          ${subs.length ? `<span class="badge badge-gray">☑ ${subs.filter(([,s])=>s.status==='done').length}/${subs.length}</span>` : ''}
+        </div>
+        ${subs.length ? `<div class="progress-bar"><div class="progress-fill ${tp>=100?'green':''}" style="width:${tp}%"></div></div>` : ''}
+        <div class="proj-meta" style="margin-top:8px">${an ? `<span class="badge badge-blue">${esc(an)}</span>` : '<span style="font-size:11px;color:var(--gray5)">Unassigned</span>'}</div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+function taskTableHtml(tasks) {
+  return `<div class="tbl-wrap"><table class="data-table">
+    <thead><tr><th></th><th>Task</th><th>Assignee</th><th>Due</th><th>Priority</th><th>Status</th><th>Subtasks</th><th>%</th></tr></thead>
+    <tbody>
+      ${tasks.map(([tid,t]) => {
+        const subs = subtasksOf(t); const tp = taskProgress(t);
+        const an = t.assignee && allUsers[t.assignee] ? allUsers[t.assignee].name : '—';
+        return `<tr onclick="openTaskPage('${tid}')">
+          <td onclick="event.stopPropagation();toggleTaskDone('${tid}')"><div class="task-check ${t.status==='done'?'done':''}" style="margin:0">${t.status==='done'?'✓':''}</div></td>
+          <td style="font-weight:600">${esc(t.title)}</td>
+          <td>${esc(an)}</td>
+          <td>${t.due ? `<span class="${t.due<today()&&t.status!=='done'?'':''}" style="${t.due<today()&&t.status!=='done'?'color:var(--red);font-weight:600':''}">${fmtDate(t.due)}</span>` : '—'}</td>
+          <td>${priorityBadge(t.priority)||'<span style="color:var(--gray5)">Normal</span>'}</td>
+          <td>${taskStatusBadge(t.status)}</td>
+          <td>${subs.length ? subs.filter(([,s])=>s.status==='done').length+'/'+subs.length : '—'}</td>
+          <td style="font-weight:700;color:var(--brand)">${tp}%</td>
+        </tr>`;
+      }).join('')}
+    </tbody>
+  </table></div>`;
+}
+
+function taskKanbanHtml(tasks) {
+  const cols = [['todo','To Do'],['in-progress','In Progress'],['review','In Review'],['done','Done']];
+  return `<div class="kanban">
+    ${cols.map(([key,label]) => {
+      const items = tasks.filter(([,t]) => (t.status||'todo') === key);
+      return `<div class="kan-col" data-status="${key}" ondragover="kanOver(event)" ondragleave="kanLeave(event)" ondrop="kanDrop(event,'${key}')">
+        <div class="kan-col-head"><span>${label}</span><span>${items.length}</span></div>
+        ${items.map(([tid,t]) => {
+          const subs = subtasksOf(t);
+          const an = t.assignee && allUsers[t.assignee] ? allUsers[t.assignee].name : '';
+          return `<div class="kan-card p-${t.priority||'normal'}" draggable="true" ondragstart="kanDrag(event,'${tid}')" onclick="openTaskPage('${tid}')">
+            <div class="kan-card-title">${esc(t.title)}</div>
+            <div class="kan-card-meta">
+              ${t.due ? `<span class="badge ${t.due<today()&&t.status!=='done'?'badge-red':'badge-gray'}">${fmtDate(t.due)}</span>` : ''}
+              ${subs.length ? `<span class="badge badge-gray">☑ ${subs.filter(([,s])=>s.status==='done').length}/${subs.length}</span>` : ''}
+              ${an ? `<span class="badge badge-blue">${esc(an)}</span>` : ''}
+            </div>
+          </div>`;
+        }).join('') || '<div style="font-size:11px;color:var(--gray5);text-align:center;padding:10px">—</div>'}
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+function bindTaskCollection() { /* drag-drop uses inline handlers; nothing extra needed */ }
+
+let _kanDragId = null;
+function kanDrag(e, tid) { _kanDragId = tid; e.dataTransfer.effectAllowed = 'move'; }
+function kanOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
+function kanLeave(e) { e.currentTarget.classList.remove('drag-over'); }
+function kanDrop(e, status) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  if (_kanDragId) { updateTaskStatus(_kanDragId, status); _kanDragId = null; }
+}
+
+// ── page-level comments (reuse loadComments) ──
+function detachPageComments() {
+  if (detailCommentListener && detailType && detailId) {
+    db.ref(`comments/${detailType}_${detailId}`).off('value', detailCommentListener);
+    detailCommentListener = null;
+  }
+  detailType = null; detailId = null;
+}
+function bindPageComments(type, id) { detailType = type; detailId = id; loadComments(); }
+
+// ── CSV export of a project's full tree ──
+function csvCell(v) { v = String(v==null?'':v); return /[",\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v; }
+function exportProjectCsv(pid) {
+  const p = allProjects[pid]; if (!p) return;
+  const nm = uid => uid && allUsers[uid] ? allUsers[uid].name : '';
+  const rows = [['Level','Project','Sub-project','Task','Subtask','Assignee','Due','Priority','Status','Progress %']];
+  const projPct = projectAutoProgress(pid); 
+  rows.push(['Project', p.title, '', '', '', (p.assignees||[]).map(nm).filter(Boolean).join('; '), p.due||'', p.priority||'', p.status||'', projPct===null?(p.progress||0):projPct]);
+  directTasksOfProject(pid).forEach(([tid,t]) => {
+    rows.push(['Task', p.title, '(direct)', t.title, '', nm(t.assignee), t.due||'', t.priority||'', t.status||'', taskProgress(t)]);
+    subtasksOf(t).forEach(([,st]) => rows.push(['Subtask', p.title, '(direct)', t.title, st.title, nm(st.assignee), st.due||'', '', st.status||'', st.status==='done'?100:0]));
+  });
+  activeSubprojects(pid).forEach(([spid,s]) => {
+    rows.push(['Sub-project', p.title, s.title, '', '', (s.assignees||[]).map(nm).filter(Boolean).join('; '), s.due||'', s.priority||'', s.status||'', subprojectProgress(spid)]);
+    tasksOfSubproject(spid).forEach(([tid,t]) => {
+      rows.push(['Task', p.title, s.title, t.title, '', nm(t.assignee), t.due||'', t.priority||'', t.status||'', taskProgress(t)]);
+      subtasksOf(t).forEach(([,st]) => rows.push(['Subtask', p.title, s.title, t.title, st.title, nm(st.assignee), st.due||'', '', st.status||'', st.status==='done'?100:0]));
+    });
+  });
+  const csv = rows.map(r => r.map(csvCell).join(',')).join('\n');
+  const blob = new Blob(['﻿'+csv], { type:'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `Habbit-${(p.title||'project').replace(/[^\w]+/g,'_')}.csv`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast('Project exported ⬇','success');
+}
+
+
+// ═══════════ AREAS (recurring routines) ═══════════
+function renderAreasPage() {
+  const body = document.getElementById('page-body');
+  document.getElementById('topbar-actions').innerHTML =
+    `<button class="btn btn-primary btn-sm" onclick="openAreaModal()">＋ New Area</button>`;
+
+  const areas = scopedAreas();
+  body.innerHTML = `
+    <div class="section-sub" style="margin-bottom:18px">${isAdmin()?'All team areas.':'Your ongoing responsibilities — recurring routines that never "finish" (PARA method). Private to you.'}</div>
+    <div class="card-grid">
+      ${areas.length ? areas.map(([id,a]) => areaCardHtml(id,a)).join('') : emptyState('🔄','No areas yet','Create an area for each ongoing responsibility — QC, compliance, maintenance…')}
+    </div>`;
+}
+
+function areaCardHtml(id, a) {
+  const tToday = today();
+  const owner = a.owner && allUsers[a.owner] ? allUsers[a.owner].name : '';
+  const routines = Object.entries(a.routines||{});
+  return `<div class="area-card">
+    <div class="proj-card-header">
+      <div><div class="proj-title">${esc(a.title)}</div><div class="proj-dept">${esc(a.dept||'')}${owner?' · 👤 '+esc(owner):''}</div></div>
+      <div style="display:flex;gap:2px">
+        <button class="btn-icon btn" title="Edit" onclick="openAreaModal('${id}')">✏️</button>
+        ${(isAdmin() || a.createdBy===myUid()) ? `<button class="btn-icon btn" title="Delete" onclick="deleteArea('${id}')">🗑</button>` : ''}
+      </div>
+    </div>
+    ${a.desc ? `<div class="proj-desc">${esc(a.desc)}</div>` : ''}
+    <div style="margin:10px 0 8px;display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:12px;font-weight:700;color:var(--gray6)">ROUTINES (${routines.length})</span>
+      <button class="btn btn-ghost btn-sm" onclick="openRoutineModal('${id}')">＋ Routine</button>
+    </div>
+    ${routines.length ? routines.map(([rid,r]) => `
+      <div class="routine-row">
+        <div class="task-check" onclick="completeRoutine('${id}','${rid}')" title="Mark done (advances to next ${r.freq})"></div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:12px">${esc(r.title)}</div>
+          ${r.assignee && allUsers[r.assignee] ? `<div style="font-size:10px;color:var(--gray5)">${esc(allUsers[r.assignee].name)}</div>` : ''}
+        </div>
+        <span class="r-freq">${r.freq}</span>
+        ${r.nextDue ? `<span class="badge ${r.nextDue < tToday ? 'badge-red' : r.nextDue === tToday ? 'badge-amber' : 'badge-gray'}">${fmtDate(r.nextDue)}</span>` : ''}
+        <button class="btn-icon btn btn-sm" onclick="openRoutineModal('${id}','${rid}')">✏️</button>
+        <button class="btn-icon btn btn-sm" onclick="deleteRoutine('${id}','${rid}')">✕</button>
+      </div>`).join('') : '<p style="font-size:12px;color:var(--gray5)">No routines yet</p>'}
+  </div>`;
+}
+
+function openAreaModal(id) {
+  document.getElementById('area-modal-title').textContent = id ? 'Edit Area' : 'New Area';
+  document.getElementById('am-id').value = id || '';
+  document.getElementById('am-dept').innerHTML = '<option value="">Cross-functional</option>' + allDepts.map(d=>`<option value="${esc(d)}">${esc(d)}</option>`).join('');
+  document.getElementById('am-owner').innerHTML = '<option value="">Unowned</option>' + Object.entries(allUsers).map(([uid,u])=>`<option value="${uid}">${esc(u.name)}</option>`).join('');
+  const a = id ? allAreas[id] : null;
+  document.getElementById('am-title').value = a ? a.title||'' : '';
+  document.getElementById('am-desc').value = a ? a.desc||'' : '';
+  document.getElementById('am-dept').value = a ? a.dept||'' : '';
+  document.getElementById('am-owner').value = a ? a.owner||'' : '';
+  document.getElementById('area-modal-overlay').classList.add('open');
+}
+
+async function saveArea() {
+  const id = document.getElementById('am-id').value;
+  const title = document.getElementById('am-title').value.trim();
+  if (!title) { toast('Area name is required','error'); return; }
+  const data = {
+    title,
+    desc: document.getElementById('am-desc').value.trim(),
+    dept: document.getElementById('am-dept').value,
+    owner: document.getElementById('am-owner').value,
+    updatedAt: Date.now()
+  };
+  if (id) await db.ref(`areas/${id}`).update(data);
+  else { data.createdAt = Date.now(); data.createdBy = currentUser.uid; await db.ref('areas').push(data); }
+  logActivity('area', `${currentProfile.name} ${id?'updated':'created'} area "${title}"`);
+  toast(id ? 'Area updated' : 'Area created ✓','success');
+  closeModalX('area-modal-overlay');
+}
+
+async function deleteArea(id) {
+  if (!confirm('Delete this area and all its routines?')) return;
+  await db.ref(`areas/${id}`).remove();
+  toast('Area deleted');
+}
+
+function openRoutineModal(areaId, rid) {
+  document.getElementById('routine-modal-title').textContent = rid ? 'Edit Routine' : 'New Routine';
+  document.getElementById('rm-area-id').value = areaId;
+  document.getElementById('rm-id').value = rid || '';
+  document.getElementById('rm-assignee').innerHTML = '<option value="">Unassigned</option>' + Object.entries(allUsers).map(([uid,u])=>`<option value="${uid}">${esc(u.name)}</option>`).join('');
+  const r = rid && allAreas[areaId] && allAreas[areaId].routines ? allAreas[areaId].routines[rid] : null;
+  document.getElementById('rm-title').value = r ? r.title||'' : '';
+  document.getElementById('rm-freq').value = r ? r.freq||'weekly' : 'weekly';
+  document.getElementById('rm-due').value = r ? r.nextDue||today() : today();
+  document.getElementById('rm-assignee').value = r ? r.assignee||'' : '';
+  document.getElementById('routine-modal-overlay').classList.add('open');
+}
+
+async function saveRoutine() {
+  const areaId = document.getElementById('rm-area-id').value;
+  const rid = document.getElementById('rm-id').value;
+  const title = document.getElementById('rm-title').value.trim();
+  if (!title || !areaId) { toast('Routine title is required','error'); return; }
+  const data = {
+    title,
+    freq: document.getElementById('rm-freq').value,
+    nextDue: document.getElementById('rm-due').value || today(),
+    assignee: document.getElementById('rm-assignee').value || ''
+  };
+  if (rid) await db.ref(`areas/${areaId}/routines/${rid}`).update(data);
+  else await db.ref(`areas/${areaId}/routines`).push(data);
+  toast(rid ? 'Routine updated' : 'Routine added ✓','success');
+  closeModalX('routine-modal-overlay');
+}
+
+async function completeRoutine(areaId, rid) {
+  const r = allAreas[areaId] && allAreas[areaId].routines ? allAreas[areaId].routines[rid] : null;
+  if (!r) return;
+  const base = (r.nextDue && r.nextDue > today()) ? r.nextDue : today();
+  const next = advanceDue(base, r.freq);
+  await db.ref(`areas/${areaId}/routines/${rid}`).update({ nextDue: next, lastDone: today(), lastDoneBy: currentUser.uid });
+  logActivity('done', `${currentProfile.name} completed routine "${r.title}" → next ${fmtDate(next)}`);
+  toast(`✓ Done — next due ${fmtDate(next)}`,'success');
+}
+
+async function deleteRoutine(areaId, rid) {
+  if (!confirm('Delete this routine?')) return;
+  await db.ref(`areas/${areaId}/routines/${rid}`).remove();
+}
+
+function advanceDue(dateStr, freq) {
+  const d = new Date(dateStr + 'T00:00:00');
+  if (freq === 'daily') d.setDate(d.getDate()+1);
+  else if (freq === 'weekly') d.setDate(d.getDate()+7);
+  else if (freq === 'monthly') d.setMonth(d.getMonth()+1);
+  else if (freq === 'quarterly') d.setMonth(d.getMonth()+3);
+  else d.setDate(d.getDate()+7);
+  const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), dd=String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${dd}`;
+}
+
+// ═══════════ RESOURCES ═══════════
+function renderResourcesPage() {
+  const body = document.getElementById('page-body');
+  document.getElementById('topbar-actions').innerHTML =
+    `<button class="btn btn-ghost btn-sm" onclick="newFolder()">📂 New Folder</button>
+     <button class="btn btn-primary btn-sm" onclick="openResModal()">＋ Add Resource</button>`;
+
+  const folders = Object.entries(allFolders);
+  const items = scopedResources().filter(([,r]) => !activeFolder || r.folderId === activeFolder);
+
+  body.innerHTML = `
+    <div class="section-sub" style="margin-bottom:14px">${isAdmin()?'All team resources.':'Your reference material — links, notes, and files. Private to you.'}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">
+      <div class="folder-chip ${!activeFolder?'active':''}" onclick="setFolder('')">📚 All</div>
+      ${folders.map(([fid,f]) => `<div class="folder-chip ${activeFolder===fid?'active':''}" onclick="setFolder('${fid}')">📂 ${esc(f.name)}
+        ${isAdmin() ? `<span onclick="event.stopPropagation();deleteFolder('${fid}')" style="opacity:.6;margin-left:2px">✕</span>` : ''}</div>`).join('')}
+    </div>
+    <div class="card-grid" style="grid-template-columns:repeat(auto-fill,minmax(240px,1fr))">
+      ${items.length ? items.map(([id,r]) => resCardHtml(id,r)).join('') : emptyState('📚','No resources here','Add links, notes, or files for your team')}
+    </div>`;
+}
+
+function setFolder(fid) { activeFolder = fid; renderResourcesPage(); }
+
+function resCardHtml(id, r) {
+  const icon = {link:'🔗',note:'📝',file:'📄'}[r.type] || '📚';
+  const folder = r.folderId && allFolders[r.folderId] ? allFolders[r.folderId].name : '';
+  const proj = r.projectId && allProjects[r.projectId] ? allProjects[r.projectId].title : '';
+  const author = r.createdBy && allUsers[r.createdBy] ? allUsers[r.createdBy].name : '';
+  let action = '';
+  if (r.type === 'link') action = `<a class="btn btn-primary btn-sm" href="${esc(r.url)}" target="_blank" rel="noopener">Open ↗</a>`;
+  else if (r.type === 'note') action = `<button class="btn btn-primary btn-sm" onclick="viewNote('${id}')">Read</button>`;
+  else if (r.type === 'file') action = `<button class="btn btn-primary btn-sm" onclick="downloadResFile('${id}')">⬇ Download</button>`;
+  return `<div class="res-card">
+    <div class="res-icon">${icon}</div>
+    <div class="res-title">${esc(r.title)}</div>
+    <div class="res-sub">${folder?'📂 '+esc(folder)+' · ':''}${proj?'📁 '+esc(proj)+' · ':''}${author?esc(author)+' · ':''}${relTime(r.createdAt)}</div>
+    ${r.type==='file' ? `<div class="res-sub" style="margin-top:2px">${esc(r.fileName||'')} · ${Math.round((r.size||0)/1024)} KB</div>` : ''}
+    <div class="res-actions">
+      ${action}
+      <button class="btn btn-ghost btn-sm" onclick="openResModal('${id}')">✏️</button>
+      <button class="btn btn-ghost btn-sm" onclick="deleteResource('${id}')">🗑</button>
+    </div>
+  </div>`;
+}
+
+async function newFolder() {
+  const name = prompt('Folder name:');
+  if (!name || !name.trim()) return;
+  await db.ref('resourceFolders').push({ name: name.trim(), createdBy: currentUser.uid, createdAt: Date.now() });
+  toast('Folder created ✓','success');
+}
+
+async function deleteFolder(fid) {
+  if (!confirm('Delete folder? Items inside move to "All".')) return;
+  const updates = {};
+  Object.entries(allResources).forEach(([rid,r]) => { if (r.folderId === fid) updates[`resources/${rid}/folderId`] = ''; });
+  updates[`resourceFolders/${fid}`] = null;
+  await db.ref().update(updates);
+  if (activeFolder === fid) activeFolder = '';
+  toast('Folder deleted');
+}
+
+function resTypeChanged() {
+  const t = document.getElementById('rs-type').value;
+  document.getElementById('rs-url-row').style.display = t==='link' ? '' : 'none';
+  document.getElementById('rs-note-row').style.display = t==='note' ? '' : 'none';
+  document.getElementById('rs-file-row').style.display = t==='file' ? '' : 'none';
+}
+
+function openResModal(id) {
+  document.getElementById('res-modal-title').textContent = id ? 'Edit Resource' : 'Add Resource';
+  document.getElementById('rs-id').value = id || '';
+  document.getElementById('rs-folder').innerHTML = '<option value="">No folder</option>' + Object.entries(allFolders).map(([fid,f])=>`<option value="${fid}">${esc(f.name)}</option>`).join('');
+  document.getElementById('rs-project').innerHTML = '<option value="">None</option>' + scopedProjects().map(([pid,p])=>`<option value="${pid}">${esc(p.title)}</option>`).join('');
+  const r = id ? allResources[id] : null;
+  document.getElementById('rs-type').value = r ? r.type : 'link';
+  document.getElementById('rs-title').value = r ? r.title||'' : '';
+  document.getElementById('rs-url').value = r ? r.url||'' : '';
+  document.getElementById('rs-note').value = r ? r.content||'' : '';
+  document.getElementById('rs-file').value = '';
+  document.getElementById('rs-folder').value = r ? r.folderId||'' : (activeFolder||'');
+  document.getElementById('rs-project').value = r ? r.projectId||'' : '';
+  resTypeChanged();
+  document.getElementById('res-modal-overlay').classList.add('open');
+}
+
+async function saveResource() {
+  const id = document.getElementById('rs-id').value;
+  const type = document.getElementById('rs-type').value;
+  const title = document.getElementById('rs-title').value.trim();
+  if (!title) { toast('Title is required','error'); return; }
+  const data = {
+    type, title,
+    folderId: document.getElementById('rs-folder').value || '',
+    projectId: document.getElementById('rs-project').value || '',
+    updatedAt: Date.now()
+  };
+  if (type === 'link') {
+    const url = document.getElementById('rs-url').value.trim();
+    if (!url) { toast('URL is required for links','error'); return; }
+    data.url = url;
+  } else if (type === 'note') {
+    data.content = document.getElementById('rs-note').value;
+  } else if (type === 'file') {
+    const fileInput = document.getElementById('rs-file');
+    const f = fileInput.files[0];
+    if (!f && !id) { toast('Choose a file','error'); return; }
+    if (f) {
+      if (f.size > 1024*1024) { toast('File too large — max 1 MB. Use a link instead.','error'); return; }
+      const b64 = await new Promise((res, rej) => {
+        const reader = new FileReader();
+        reader.onload = () => res(reader.result.split(',')[1]);
+        reader.onerror = rej;
+        reader.readAsDataURL(f);
+      });
+      data.fileName = f.name; data.mime = f.type || 'application/octet-stream';
+      data.size = f.size; data.data = b64;
+    }
+  }
+  if (id) await db.ref(`resources/${id}`).update(data);
+  else {
+    data.createdAt = Date.now(); data.createdBy = currentUser.uid;
+    await db.ref('resources').push(data);
+  }
+  logActivity('resource', `${currentProfile.name} added resource "${title}"`);
+  toast(id ? 'Resource updated' : 'Resource added ✓','success');
+  closeModalX('res-modal-overlay');
+}
+
+async function deleteResource(id) {
+  if (!confirm('Delete this resource?')) return;
+  await db.ref(`resources/${id}`).remove();
+  toast('Resource deleted');
+}
+
+function viewNote(id) {
+  const r = allResources[id];
+  if (!r) return;
+  document.getElementById('detail-modal-title').textContent = '📝 ' + r.title;
+  document.getElementById('detail-modal-body').innerHTML =
+    `<div style="font-size:14px;color:var(--gray7);white-space:pre-wrap;line-height:1.7">${esc(r.content||'')}</div>
+     <div class="modal-footer"><button class="btn btn-ghost" onclick="closeDetailModal();openResModal('${id}')">✏️ Edit</button></div>`;
+  detailType = 'note'; detailId = id;
+  document.getElementById('detail-modal-overlay').classList.add('open');
+}
+
+async function downloadResFile(id) {
+  // fetch fresh in case list payload was trimmed
+  const snap = await db.ref(`resources/${id}`).once('value');
+  const r = snap.val();
+  if (!r || !r.data) { toast('File data missing','error'); return; }
+  const a = document.createElement('a');
+  a.href = `data:${r.mime||'application/octet-stream'};base64,${r.data}`;
+  a.download = r.fileName || r.title;
+  document.body.appendChild(a); a.click(); a.remove();
+}
+
+// ═══════════ ARCHIVES ═══════════
+function renderArchivesPage() {
+  const body = document.getElementById('page-body');
+  document.getElementById('topbar-actions').innerHTML = '';
+  const projs = scopedArchivedProjects();
+  const myIds = isAdmin() ? null : new Set([...scopedProjects(), ...projs].map(([id])=>id));
+  const tasks = closedTasks().filter(([,t]) => isAdmin() || t.assignee===myUid() || t.createdBy===myUid() || (t.projectId && myIds.has(t.projectId)));
+
+  body.innerHTML = `
+    <div class="section-sub" style="margin-bottom:18px">${isAdmin()?'All closed projects and completed tasks.':'Your closed projects and completed tasks.'} Restore anything to bring it back to active views.</div>
+
+    <div class="section-header"><div class="section-title">📦 Archived Projects (${projs.length})</div></div>
+    <div class="card-grid" style="margin-bottom:28px">
+      ${projs.length ? projs.map(([id,p]) => `
+        <div class="proj-card" style="opacity:.85" onclick="openDetail('project','${id}')">
+          <div class="proj-card-header">
+            <div><div class="proj-title">${esc(p.title)}</div><div class="proj-dept">${esc(p.dept||'')} · archived ${relTime(p.archivedAt)}</div></div>
+            ${statusBadge(p.status)}
+          </div>
+          ${isAdmin() ? `<div style="display:flex;gap:6px;margin-top:8px" onclick="event.stopPropagation()">
+            <button class="btn btn-ghost btn-sm" onclick="unarchiveProject('${id}')">↩ Restore</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteProject('${id}')">🗑 Delete Forever</button>
+          </div>` : ''}
+        </div>`).join('') : emptyState('📦','No archived projects','')}
+    </div>
+
+    <div class="section-header"><div class="section-title">✅ Completed / Closed Tasks (${tasks.length})</div></div>
+    <div id="arch-tasks">
+      ${tasks.length ? tasks.slice(0,80).map(([id,t]) => `
+        <div class="task-row" onclick="openDetail('task','${id}')">
+          <div class="task-check done">✓</div>
+          <div class="task-title done" style="flex:1">${esc(t.title)}</div>
+          <div class="task-row-meta">
+            ${t.completedAt ? `<span class="badge badge-gray">done ${relTime(t.completedAt)}</span>` : ''}
+            <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();reopenTask('${id}')">↩ Reopen</button>
+            ${isAdmin() ? `<button class="btn-icon btn btn-sm" onclick="event.stopPropagation();deleteTask('${id}')">🗑</button>` : ''}
+          </div>
+        </div>`).join('') : emptyState('✅','No completed tasks yet','')}
+    </div>`;
+}
+
+async function archiveProject(id) {
+  const p = allProjects[id];
+  if (!p) return;
+  if (!canEditProject(id)) { toast('Only the owner or an admin can archive this project','error'); return; }
+  if (!confirm(`Archive "${p.title}"? Its sub-projects and tasks will be archived too.`)) return;
+  const updates = { [`projects/${id}/archived`]: true, [`projects/${id}/archivedAt`]: Date.now() };
+  Object.entries(allTasks).forEach(([tid,t]) => { if (t.projectId === id) updates[`tasks/${tid}/archived`] = true; });
+  Object.entries(allSubprojects).forEach(([spid,s]) => { if (s.projectId === id) updates[`subprojects/${spid}/archived`] = true; });
+  await db.ref().update(updates);
+  logActivity('archive', `${currentProfile.name} archived project "${p.title}"`);
+  toast('Project archived 📦','success');
+}
+
+async function unarchiveProject(id) {
+  const p = allProjects[id];
+  const updates = { [`projects/${id}/archived`]: false, [`projects/${id}/archivedAt`]: null };
+  Object.entries(allTasks).forEach(([tid,t]) => { if (t.projectId === id) updates[`tasks/${tid}/archived`] = false; });
+  Object.entries(allSubprojects).forEach(([spid,s]) => { if (s.projectId === id) updates[`subprojects/${spid}/archived`] = false; });
+  await db.ref().update(updates);
+  logActivity('archive', `${currentProfile.name} restored project "${p?p.title:''}"`);
+  toast('Project restored ↩','success');
+}
+
+async function reopenTask(id) {
+  await db.ref(`tasks/${id}`).update({ status:'todo', archived:false, completedAt:null });
+  toast('Task reopened ↩');
+}
+
+// ═══════════ CALENDAR ═══════════
+function renderCalendarPage() {
+  const body = document.getElementById('page-body');
+  document.getElementById('topbar-actions').innerHTML =
+    `<button class="btn btn-primary btn-sm" onclick="openMeetingModal()">＋ Meeting</button>`;
+
+  const first = new Date(calYear, calMonth, 1);
+  const startDow = first.getDay();
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  const monthName = first.toLocaleDateString('en-IN', { month:'long', year:'numeric' });
+  const tToday = today();
+
+  // gather items per date
+  const itemsByDate = {};
+  const push = (date, item) => { if (!itemsByDate[date]) itemsByDate[date] = []; itemsByDate[date].push(item); };
+  Object.entries(allEvents).forEach(([id,ev]) => { if (ev.date) push(ev.date, { cls:'ce-meeting', label:(ev.time?ev.time+' ':'')+ev.title, act:`openMeetingModal('${id}')` }); });
+  scopedTasks().forEach(([id,t]) => { if (t.due) push(t.due, { cls:'ce-task'+(t.due<tToday?' overdue':''), label:'☑ '+t.title, act:`openDetail('task','${id}')` }); });
+  // subtask dues (only within tasks I can see)
+  const visTaskIds = new Set(scopedTasks().map(([id])=>id));
+  Object.entries(allTasks).forEach(([tid,t]) => { if (!t.archived && (isAdmin()||visTaskIds.has(tid))) subtasksOf(t).forEach(([,s]) => { if (s.due && s.status!=='done') push(s.due, { cls:'ce-task'+(s.due<tToday?' overdue':''), label:'☑ '+s.title, act:`openDetail('task','${tid}')` }); }); });
+  const visPids = scopedProjectIds();
+  scopedProjects().forEach(([id,p]) => { if (p.due && p.status!=='done') push(p.due, { cls:'ce-proj', label:'📁 '+p.title, act:`openDetail('project','${id}')` }); });
+  Object.entries(allSubprojects).forEach(([spid,s]) => { if (s.due && !s.archived && s.status!=='done' && (isAdmin()||visPids.has(s.projectId))) push(s.due, { cls:'ce-proj', label:'📂 '+s.title, act:`openDetail('subproject','${spid}')` }); });
+  scopedAreas().forEach(([aid,a]) => Object.entries(a.routines||{}).forEach(([rid,r]) => {
+    if (r.nextDue) push(r.nextDue, { cls:'ce-routine', label:'🔄 '+r.title, act:`navTo('areas')` });
+  }));
+
+  let cells = '';
+  const dows = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  // leading blanks from prev month
+  const prevDays = new Date(calYear, calMonth, 0).getDate();
+  for (let i = startDow-1; i >= 0; i--) cells += `<div class="cal-cell other-month"><div class="cal-date">${prevDays-i}</div></div>`;
+  for (let d = 1; d <= daysInMonth; d++) {
+    const ds = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const items = itemsByDate[ds] || [];
+    const shown = items.slice(0,3);
+    cells += `<div class="cal-cell ${ds===tToday?'today':''}" onclick="openMeetingModal(null,'${ds}')">
+      <div class="cal-date">${d}</div>
+      ${shown.map(it => `<div class="cal-event ${it.cls}" onclick="event.stopPropagation();${it.act}">${esc(it.label)}</div>`).join('')}
+      ${items.length > 3 ? `<div class="cal-more">+${items.length-3} more</div>` : ''}
+    </div>`;
+  }
+  const totalCells = startDow + daysInMonth;
+  const trailing = (7 - (totalCells % 7)) % 7;
+  for (let i = 1; i <= trailing; i++) cells += `<div class="cal-cell other-month"><div class="cal-date">${i}</div></div>`;
+
+  body.innerHTML = `
+    <div class="cal-header">
+      <button class="btn btn-ghost btn-sm" onclick="calShift(-1)">← Prev</button>
+      <div class="cal-title">${monthName}</div>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-ghost btn-sm" onclick="calToday()">Today</button>
+        <button class="btn btn-ghost btn-sm" onclick="calShift(1)">Next →</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:12px;font-size:11px;color:var(--gray6)">
+      <span><span class="badge badge-purple">■</span> Meetings</span>
+      <span><span class="badge badge-amber">■</span> Task dues</span>
+      <span><span class="badge badge-blue">■</span> Project deadlines</span>
+      <span><span class="badge badge-teal">■</span> Routines</span>
+      <span style="color:var(--gray5)">Click a day to schedule a meeting</span>
+    </div>
+    <div class="cal-grid">
+      ${dows.map(d=>`<div class="cal-dow">${d}</div>`).join('')}
+      ${cells}
+    </div>`;
+}
+
+function calShift(n) {
+  calMonth += n;
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  renderCalendarPage();
+}
+function calToday() {
+  const now = new Date();
+  calYear = now.getFullYear(); calMonth = now.getMonth();
+  renderCalendarPage();
+}
+
+function openMeetingModal(id, prefillDate) {
+  document.getElementById('meet-modal-title').textContent = id ? 'Edit Meeting' : 'New Meeting';
+  document.getElementById('mt-id').value = id || '';
+  document.getElementById('mt-delete-btn').style.display = id ? '' : 'none';
+  const ev = id ? allEvents[id] : null;
+  document.getElementById('mt-title').value = ev ? ev.title||'' : '';
+  document.getElementById('mt-date').value = ev ? ev.date||'' : (prefillDate || today());
+  document.getElementById('mt-time').value = ev ? ev.time||'' : '';
+  document.getElementById('mt-notes').value = ev ? ev.notes||'' : '';
+  const attendees = ev && ev.attendees ? ev.attendees : [];
+  document.getElementById('mt-attendees').innerHTML = Object.entries(allUsers).map(([uid,u]) => `
+    <label class="check-item"><input type="checkbox" value="${uid}" ${attendees.includes(uid)?'checked':''}/>
+    <div class="avatar" style="width:22px;height:22px;font-size:9px;margin-left:0">${initials(u.name)}</div> ${esc(u.name)}</label>`).join('');
+  document.getElementById('meet-modal-overlay').classList.add('open');
+}
+
+async function saveMeeting() {
+  const id = document.getElementById('mt-id').value;
+  const title = document.getElementById('mt-title').value.trim();
+  const date = document.getElementById('mt-date').value;
+  if (!title || !date) { toast('Title and date are required','error'); return; }
+  const attendees = [...document.querySelectorAll('#mt-attendees input:checked')].map(c => c.value);
+  const data = {
+    title, date,
+    time: document.getElementById('mt-time').value || '',
+    notes: document.getElementById('mt-notes').value.trim(),
+    attendees,
+    updatedAt: Date.now()
+  };
+  if (id) await db.ref(`events/${id}`).update(data);
+  else { data.createdAt = Date.now(); data.createdBy = currentUser.uid; await db.ref('events').push(data); }
+  logActivity('meeting', `${currentProfile.name} ${id?'updated':'scheduled'} meeting "${title}" on ${fmtDate(date)}`);
+  toast(id ? 'Meeting updated' : 'Meeting scheduled 🗓️','success');
+  closeModalX('meet-modal-overlay');
+}
+
+async function deleteMeeting() {
+  const id = document.getElementById('mt-id').value;
+  if (!id || !confirm('Delete this meeting?')) return;
+  await db.ref(`events/${id}`).remove();
+  closeModalX('meet-modal-overlay');
+  toast('Meeting deleted');
+}
+
+// ═══════════ CHAT (per-project) ═══════════
+function renderChatPage() {
+  const body = document.getElementById('page-body');
+  document.getElementById('topbar-actions').innerHTML = '';
+  const projs = scopedProjects();
+  if ((!chatActiveProj || !projs.some(([id])=>id===chatActiveProj)) && projs.length) chatActiveProj = projs[0][0];
+
+  body.innerHTML = `
+    <div class="chat-layout">
+      <div class="chat-sidebar">
+        <div class="chat-side-header">Project Channels</div>
+        ${projs.length ? projs.map(([id,p]) => `
+          <div class="chat-channel ${chatActiveProj===id?'active':''}" onclick="switchChat('${id}')"># ${esc(p.title)}</div>`).join('')
+          : '<p style="padding:14px;font-size:12px;color:var(--gray5)">No active projects — chat channels are created per project.</p>'}
+      </div>
+      <div class="chat-main">
+        <div class="chat-header" id="chat-header">${chatActiveProj && allProjects[chatActiveProj] ? '# '+esc(allProjects[chatActiveProj].title) : 'Select a channel'}</div>
+        <div class="chat-messages" id="chat-messages"><p style="color:var(--gray5);font-size:13px">Loading…</p></div>
+        <div class="chat-input-bar">
+          <textarea id="chat-input" rows="1" placeholder="Message the project team… (Enter to send)" onkeydown="chatKeydown(event)"></textarea>
+          <button class="btn btn-primary" onclick="sendChatMsg()">Send ➤</button>
+        </div>
+      </div>
+    </div>`;
+
+  if (chatActiveProj) attachChatListener(chatActiveProj);
+  else document.getElementById('chat-messages').innerHTML = '<p style="color:var(--gray5);font-size:13px">No channel selected</p>';
+}
+
+function switchChat(pid) {
+  if (chatListener && chatActiveProj) db.ref(`chats/${chatActiveProj}`).off('value', chatListener);
+  chatListener = null;
+  chatActiveProj = pid;
+  renderChatPage();
+}
+
+function attachChatListener(pid) {
+  if (chatListener) db.ref(`chats/${pid}`).off('value', chatListener);
+  const ref = db.ref(`chats/${pid}`).orderByChild('createdAt').limitToLast(150);
+  chatListener = ref.on('value', snap => {
+    const box = document.getElementById('chat-messages');
+    if (!box || currentPage !== 'chat') return;
+    const msgs = []; snap.forEach(c => msgs.push({id:c.key,...c.val()}));
+    box.innerHTML = msgs.length ? msgs.map(m => {
+      const mine = m.authorUid === currentUser.uid;
+      return `<div class="chat-msg ${mine?'mine':''}">
+        ${!mine ? `<div class="comment-avatar" title="${esc(m.authorName)}">${initials(m.authorName||'?')}</div>` : ''}
+        <div class="chat-bubble">
+          <div class="chat-msg-meta"><span class="chat-msg-author">${mine?'You':esc(m.authorName||'')}</span><span class="chat-msg-time">${relTime(m.createdAt)}</span></div>
+          <div class="chat-msg-text">${esc(m.text)}</div>
+        </div>
+      </div>`;
+    }).join('') : '<p style="color:var(--gray5);font-size:13px;text-align:center;margin-top:20px">No messages yet — start the conversation 👋</p>';
+    box.scrollTop = box.scrollHeight;
+  });
+}
+
+function chatKeydown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChatMsg(); }
+}
+
+async function sendChatMsg() {
+  const ta = document.getElementById('chat-input');
+  const text = ta.value.trim();
+  if (!text || !chatActiveProj) return;
+  await db.ref(`chats/${chatActiveProj}`).push({
+    text, authorUid: currentUser.uid, authorName: currentProfile.name, createdAt: Date.now()
+  });
+  ta.value = '';
+}
+
+// ═══════════ EMPLOYEE METRICS (admin) ═══════════
+function renderMetricsPage() {
+  if (!isAdmin()) { navTo('dashboard'); return; }
+  const body = document.getElementById('page-body');
+  document.getElementById('topbar-actions').innerHTML = '';
+  const tToday = today();
+
+  // per-user metrics
+  const userStats = {};
+  Object.keys(allUsers).forEach(uid => {
+    userStats[uid] = { open:0, done:0, overdue:0, onTime:0, late:0, projects:new Set() };
+  });
+  // count every work unit (tasks AND subtasks, since subtasks are full mini-tasks)
+  forEachWorkUnit(u => {
+    if (!u.assignee || !userStats[u.assignee]) return;
+    const s = userStats[u.assignee];
+    if (u.status === 'done') {
+      s.done++;
+      if (u.due && u.completedAt) {
+        const doneDate = new Date(u.completedAt).toISOString().slice(0,10);
+        if (doneDate <= u.due) s.onTime++; else s.late++;
+      }
+    } else if (!u.archived) {
+      s.open++;
+      if (u.due && u.due < tToday) s.overdue++;
+    }
+    if (u.projectId) s.projects.add(u.projectId);
+  });
+  activeProjects().forEach(([pid,p]) => (p.assignees||[]).forEach(uid => { if (userStats[uid]) userStats[uid].projects.add(pid); }));
+
+  // group by dept
+  const deptGroups = {};
+  Object.entries(allUsers).forEach(([uid,u]) => {
+    const d = u.dept || 'Unassigned';
+    if (!deptGroups[d]) deptGroups[d] = [];
+    deptGroups[d].push({uid, ...u});
+  });
+
+  // dept rollups + comparison
+  const deptSummaries = Object.entries(deptGroups).map(([dept, members]) => {
+    let open=0, done=0, overdue=0, onTime=0, judged=0;
+    members.forEach(m => {
+      const s = userStats[m.uid];
+      open += s.open; done += s.done; overdue += s.overdue;
+      onTime += s.onTime; judged += s.onTime + s.late;
+    });
+    const total = open + done;
+    const compRate = total ? Math.round(done/total*100) : 0;
+    const onTimeRate = judged ? Math.round(onTime/judged*100) : null;
+    return { dept, members, open, done, overdue, compRate, onTimeRate };
+  }).sort((a,b) => a.dept.localeCompare(b.dept));
+
+  body.innerHTML = `
+    <div class="card" style="margin-bottom:24px">
+      <div class="section-title" style="margin-bottom:14px">Department Comparison — Completion Rate</div>
+      ${deptSummaries.map(d => `
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+          <span style="width:150px;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(d.dept)}</span>
+          <div class="metric-bar-track"><div class="metric-bar-fill" style="width:${d.compRate}%;background:${d.compRate>=70?'var(--green)':d.compRate>=40?'var(--amber)':'var(--red)'}"></div></div>
+          <span style="width:44px;font-size:13px;font-weight:700;text-align:right">${d.compRate}%</span>
+          <span style="width:110px;font-size:11px;color:var(--gray5)">${d.done} done / ${d.open} open</span>
+        </div>`).join('') || '<p style="color:var(--gray5);font-size:13px">No data yet</p>'}
+    </div>
+
+    ${deptSummaries.map(d => `
+      <div class="metric-dept card" style="padding:0;overflow:hidden;margin-bottom:20px">
+        <div style="padding:16px 18px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--gray3);flex-wrap:wrap">
+          <div class="section-title">${esc(d.dept)}</div>
+          <span class="badge badge-blue">${d.members.length} member${d.members.length!==1?'s':''}</span>
+          <span class="badge badge-green">${d.done} completed</span>
+          <span class="badge badge-amber">${d.open} open</span>
+          ${d.overdue ? `<span class="badge badge-red">${d.overdue} overdue</span>` : ''}
+          ${d.onTimeRate !== null ? `<span class="badge ${d.onTimeRate>=75?'badge-green':'badge-amber'}">⏱ ${d.onTimeRate}% on-time</span>` : ''}
+        </div>
+        <table class="metric-table">
+          <thead><tr><th>Member</th><th>Open</th><th>Completed</th><th>Overdue</th><th>On-time %</th><th>Projects</th></tr></thead>
+          <tbody>
+            ${d.members.map(m => {
+              const s = userStats[m.uid];
+              const judged = s.onTime + s.late;
+              const otp = judged ? Math.round(s.onTime/judged*100) : null;
+              return `<tr>
+                <td><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="margin-left:0">${initials(m.name)}</div><span style="font-weight:600">${esc(m.name)}</span>${m.role==='admin'?' ⭐':''}</div></td>
+                <td>${s.open}</td>
+                <td>${s.done}</td>
+                <td>${s.overdue ? `<span class="badge badge-red">${s.overdue}</span>` : '0'}</td>
+                <td>${otp === null ? '<span style="color:var(--gray5)">—</span>' : `<span class="badge ${otp>=75?'badge-green':otp>=50?'badge-amber':'badge-red'}">${otp}%</span>`}</td>
+                <td>${s.projects.size}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>`).join('')}`;
+}
+
+// ═══════════ ADMIN PANEL ═══════════
+function renderAdminPage() {
+  if (!isAdmin()) { navTo('dashboard'); return; }
+  const body = document.getElementById('page-body');
+  document.getElementById('topbar-actions').innerHTML = '';
+
+  const deptRows = allDepts.map((d, i) => `
+    <div class="member-chip" style="font-size:13px;padding:6px 12px">${esc(d)} <button onclick="removeDept(${i})" title="Remove">×</button></div>`).join('');
+
+  const userRows = Object.entries(allUsers).map(([uid, u]) => `
+    <div class="member-card">
+      <div class="member-avatar">${initials(u.name)}</div>
+      <div class="member-info">
+        <div class="member-name">${esc(u.name)}</div>
+        <div class="member-dept">${esc(u.email||'')} · ${esc(u.dept||'Unassigned')} · ${u.role}</div>
+      </div>
+      <div class="member-actions">
+        <span class="badge ${u.status==='active'?'badge-green':u.status==='pending'?'badge-amber':'badge-red'}">${u.status||'active'}</span>
+        <button class="btn btn-ghost btn-sm" onclick="openMemberModal('${uid}')">Edit</button>
+      </div>
+    </div>`).join('');
+
+  body.innerHTML = `
+    <div class="card" style="margin-bottom:20px">
+      <div class="section-header"><div><div class="section-title">Departments</div><div class="section-sub">Define your organization's structure — used in member profiles, projects, and metrics</div></div></div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px">${deptRows || '<span style="color:var(--gray5);font-size:13px">No departments yet — add your first below</span>'}</div>
+      <div style="display:flex;gap:8px">
+        <input class="form-input" id="new-dept-input" placeholder="e.g. Engineering, Marketing, Legal…" style="flex:1" onkeydown="if(event.key==='Enter')addDept()"/>
+        <button class="btn btn-primary" onclick="addDept()">＋ Add</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="section-header"><div><div class="section-title">Team Members</div><div class="section-sub">Change roles, assign departments, approve or suspend accounts</div></div></div>
+      <div style="display:flex;flex-direction:column;gap:10px">${userRows || '<p style="color:var(--gray5)">No members yet</p>'}</div>
+    </div>`;
+}
+
+async function addDept() {
+  const input = document.getElementById('new-dept-input');
+  const name = input.value.trim();
+  if (!name) return;
+  if (allDepts.some(d => d.toLowerCase() === name.toLowerCase())) { toast('Department already exists','error'); return; }
+  await db.ref('config/departments').set([...allDepts, name]);
+  input.value = '';
+  toast(`Department "${name}" added ✓`,'success');
+}
+
+async function removeDept(idx) {
+  const name = allDepts[idx];
+  const affected = Object.entries(allUsers).filter(([,u]) => u.dept === name);
+  if (!confirm(affected.length ? `Remove "${name}"? ${affected.length} member(s) become Unassigned.` : `Remove "${name}"?`)) return;
+  await db.ref('config/departments').set(allDepts.filter((_,i) => i !== idx));
+  const updates = {};
+  affected.forEach(([uid]) => updates[`users/${uid}/dept`] = '');
+  if (Object.keys(updates).length) await db.ref().update(updates);
+  toast(`Department "${name}" removed`);
+}
+
+function openMemberModal(uid) {
+  const u = allUsers[uid];
+  if (!u) return;
+  document.getElementById('mm-uid').value = uid;
+  document.getElementById('mm-name').value = u.name || '';
+  document.getElementById('mm-dept').innerHTML = '<option value="">Unassigned</option>' + allDepts.map(d=>`<option value="${esc(d)}" ${d===(u.dept||'')?'selected':''}>${esc(d)}</option>`).join('');
+  document.getElementById('mm-role').value = u.role || 'member';
+  // reporting manager: any user except self
+  document.getElementById('mm-manager').innerHTML = '<option value="">— none —</option>' +
+    Object.entries(allUsers).filter(([mid]) => mid !== uid).map(([mid,mu]) => `<option value="${mid}" ${mid===(u.reportingManager||'')?'selected':''}>${esc(mu.name)}${mu.dept?' · '+esc(mu.dept):''}</option>`).join('');
+  document.getElementById('mm-status').value = u.status || 'active';
+  document.getElementById('member-modal-overlay').classList.add('open');
+}
+
+async function saveMemberEdit() {
+  const uid = document.getElementById('mm-uid').value;
+  if (!uid) return;
+  await db.ref(`users/${uid}`).update({
+    name: document.getElementById('mm-name').value.trim(),
+    dept: document.getElementById('mm-dept').value,
+    role: document.getElementById('mm-role').value,
+    reportingManager: document.getElementById('mm-manager').value || '',
+    status: document.getElementById('mm-status').value
+  });
+  toast('Member updated ✓','success');
+  closeModalX('member-modal-overlay');
+}
+
+// ═══════════ PROJECT MODAL ═══════════
+function openProjModal(id) {
+  projModalAssignees = [];
+  document.getElementById('proj-modal-title').textContent = id ? 'Edit Project' : 'New Project';
+  document.getElementById('pm-id').value = id || '';
+  document.getElementById('pm-dept').innerHTML = '<option value="">All / Cross-functional</option>' + allDepts.map(d=>`<option value="${esc(d)}">${esc(d)}</option>`).join('');
+  const p = id ? allProjects[id] : null;
+  document.getElementById('pm-title').value = p ? p.title||'' : '';
+  document.getElementById('pm-desc').value = p ? p.desc||'' : '';
+  document.getElementById('pm-dept').value = p ? p.dept||'' : '';
+  document.getElementById('pm-status').value = p ? p.status||'planning' : 'planning';
+  document.getElementById('pm-priority').value = p ? p.priority||'normal' : 'normal';
+  document.getElementById('pm-due').value = p ? p.due||'' : '';
+  document.getElementById('pm-progress').value = p ? p.progress||0 : 0;
+  document.getElementById('pm-prog-val').textContent = (p ? p.progress||0 : 0)+'%';
+  projModalAssignees = p && p.assignees ? [...p.assignees] : [];
+  renderAssigneeChips();
+  document.getElementById('proj-modal-overlay').classList.add('open');
+}
+
+function renderAssigneeChips() {
+  document.getElementById('pm-assignees-chips').innerHTML = projModalAssignees.map(uid => {
+    const u = allUsers[uid];
+    return u ? `<div class="member-chip" onclick="event.stopPropagation()">${esc(u.name)} <button onclick="removeProjAssignee('${uid}')">×</button></div>` : '';
+  }).join('') || '<span style="color:var(--gray5);font-size:12px;padding:4px">Click to add members…</span>';
+  // rebuild dropdown
+  const dd = document.getElementById('pm-member-dd');
+  dd.innerHTML = Object.entries(allUsers).filter(([uid]) => !projModalAssignees.includes(uid))
+    .map(([uid,u]) => `<div class="member-opt" onclick="addProjAssignee('${uid}')">
+      <div class="avatar" style="width:22px;height:22px;font-size:9px;margin-left:0">${initials(u.name)}</div>
+      ${esc(u.name)} <span style="color:var(--gray5);font-size:11px">${esc(u.dept||'')}</span></div>`).join('')
+    || '<div style="padding:10px;font-size:12px;color:var(--gray5)">Everyone is already assigned</div>';
+}
+
+function addProjAssignee(uid) {
+  if (!projModalAssignees.includes(uid)) projModalAssignees.push(uid);
+  renderAssigneeChips();
+  document.getElementById('pm-member-dd').classList.remove('open');
+}
+function removeProjAssignee(uid) {
+  projModalAssignees = projModalAssignees.filter(u => u !== uid);
+  renderAssigneeChips();
+}
+function toggleDD(id) { document.getElementById(id).classList.toggle('open'); }
+
+async function saveProject() {
+  const id = document.getElementById('pm-id').value;
+  const title = document.getElementById('pm-title').value.trim();
+  if (!title) { toast('Project title is required','error'); return; }
+  const data = {
+    title,
+    desc: document.getElementById('pm-desc').value.trim(),
+    dept: document.getElementById('pm-dept').value,
+    status: document.getElementById('pm-status').value,
+    priority: document.getElementById('pm-priority').value,
+    due: document.getElementById('pm-due').value,
+    progress: parseInt(document.getElementById('pm-progress').value)||0,
+    assignees: projModalAssignees,
+    updatedAt: Date.now(), updatedBy: currentUser.uid
+  };
+  if (id) await db.ref(`projects/${id}`).update(data);
+  else { data.createdAt = Date.now(); data.createdBy = currentUser.uid; data.archived = false; await db.ref('projects').push(data); }
+  logActivity('project', `${currentProfile.name} ${id?'updated':'created'} project "${title}"`);
+  toast(id ? 'Project updated' : 'Project created ✓','success');
+  closeModalX('proj-modal-overlay');
+}
+
+async function deleteProject(id) {
+  if (!canEditProject(id)) { toast('Only the owner or an admin can delete this project','error'); return; }
+  if (!confirm('Permanently delete this project, its sub-projects, tasks, and chat? This cannot be undone.')) return;
+  const updates = { [`projects/${id}`]: null, [`chats/${id}`]: null, [`comments/project_${id}`]: null };
+  Object.entries(allTasks).forEach(([tid,t]) => { if (t.projectId === id) { updates[`tasks/${tid}`] = null; updates[`comments/task_${tid}`] = null; } });
+  Object.entries(allSubprojects).forEach(([spid,s]) => { if (s.projectId === id) { updates[`subprojects/${spid}`] = null; updates[`comments/subproject_${spid}`] = null; } });
+  await db.ref().update(updates);
+  toast('Project deleted permanently');
+}
+
+// ═══════════ TASK MODAL ═══════════
+function openTaskModal(id, defaultProjectId, defaultSubprojectId) {
+  document.getElementById('task-modal-title').textContent = id ? 'Edit Task' : 'New Task';
+  document.getElementById('tm-id').value = id || '';
+  document.getElementById('tm-project').innerHTML = '<option value="">No Project</option>' + scopedProjects().map(([pid,p])=>`<option value="${pid}">${esc(p.title)}</option>`).join('');
+  document.getElementById('tm-assignee').innerHTML = '<option value="">Unassigned</option>' + Object.entries(allUsers).map(([uid,u])=>`<option value="${uid}">${esc(u.name)}</option>`).join('');
+  const t = id ? allTasks[id] : null;
+  document.getElementById('tm-title').value = t ? t.title||'' : '';
+  document.getElementById('tm-desc').value = t ? t.desc||'' : '';
+  document.getElementById('tm-project').value = t ? t.projectId||'' : (defaultProjectId||'');
+  taskProjectChanged(); // populate sub-project dropdown for the chosen project
+  document.getElementById('tm-subproject').value = t ? t.subprojectId||'' : (defaultSubprojectId||'');
+  document.getElementById('tm-assignee').value = t ? t.assignee||'' : '';
+  document.getElementById('tm-priority').value = t ? t.priority||'normal' : 'normal';
+  document.getElementById('tm-due').value = t ? t.due||'' : '';
+  document.getElementById('tm-status').value = t ? t.status||'todo' : 'todo';
+  document.getElementById('task-modal-overlay').classList.add('open');
+}
+
+function taskProjectChanged() {
+  const pid = document.getElementById('tm-project').value;
+  const sel = document.getElementById('tm-subproject');
+  const subs = pid ? activeSubprojects(pid) : [];
+  sel.innerHTML = '<option value="">— none (directly on project) —</option>' + subs.map(([spid,s])=>`<option value="${spid}">${esc(s.title)}</option>`).join('');
+  sel.disabled = !pid || !subs.length;
+}
+
+async function saveTask() {
+  const id = document.getElementById('tm-id').value;
+  const title = document.getElementById('tm-title').value.trim();
+  if (!title) { toast('Task title is required','error'); return; }
+  if (!document.getElementById('tm-due').value) { toast('Due date is required — tasks are time-bound','error'); return; }
+  const assignee = document.getElementById('tm-assignee').value;
+  const status = document.getElementById('tm-status').value;
+  const data = {
+    title,
+    desc: document.getElementById('tm-desc').value.trim(),
+    projectId: document.getElementById('tm-project').value || '',
+    subprojectId: document.getElementById('tm-subproject').value || '',
+    assignee: assignee || '',
+    priority: document.getElementById('tm-priority').value,
+    due: document.getElementById('tm-due').value || '',
+    status,
+    updatedAt: Date.now()
+  };
+  if (status === 'done') data.completedAt = (id && allTasks[id] && allTasks[id].completedAt) || Date.now();
+  if (id) await db.ref(`tasks/${id}`).update(data);
+  else { data.createdAt = Date.now(); data.createdBy = currentUser.uid; data.archived = false; await db.ref('tasks').push(data); }
+  const an = assignee && allUsers[assignee] ? allUsers[assignee].name : '';
+  logActivity('task', `${currentProfile.name} ${id?'updated':'created'} task "${title}"${an?' → '+an:''}`);
+  toast(id ? 'Task updated' : 'Task created ✓','success');
+  closeModalX('task-modal-overlay');
+}
+
+// ═══════════ SUB-PROJECT MODAL ═══════════
+let spModalAssignees = [];
+function openSubprojectModal(projectId, id) {
+  spModalAssignees = [];
+  const sp = id ? allSubprojects[id] : null;
+  const parentId = sp ? sp.projectId : projectId;
+  const parent = allProjects[parentId];
+  document.getElementById('sp-modal-title').textContent = id ? 'Edit Sub-project' : 'New Sub-project';
+  document.getElementById('sp-parent-banner').textContent = '📁 ' + (parent ? parent.title : 'Project');
+  document.getElementById('spm-project-id').value = parentId || '';
+  document.getElementById('spm-id').value = id || '';
+  document.getElementById('spm-title').value = sp ? sp.title||'' : '';
+  document.getElementById('spm-desc').value = sp ? sp.desc||'' : '';
+  document.getElementById('spm-status').value = sp ? sp.status||'planning' : 'planning';
+  document.getElementById('spm-priority').value = sp ? sp.priority||'normal' : 'normal';
+  document.getElementById('spm-due').value = sp ? sp.due||'' : '';
+  spModalAssignees = sp && sp.assignees ? [...sp.assignees] : [];
+  renderSpAssigneeChips();
+  document.getElementById('sp-modal-overlay').classList.add('open');
+}
+function renderSpAssigneeChips() {
+  document.getElementById('spm-assignees-chips').innerHTML = spModalAssignees.map(uid => {
+    const u = allUsers[uid];
+    return u ? `<div class="member-chip" onclick="event.stopPropagation()">${esc(u.name)} <button onclick="removeSpAssignee('${uid}')">×</button></div>` : '';
+  }).join('') || '<span style="color:var(--gray5);font-size:12px;padding:4px">Click to add members…</span>';
+  const dd = document.getElementById('spm-member-dd');
+  dd.innerHTML = Object.entries(allUsers).filter(([uid]) => !spModalAssignees.includes(uid))
+    .map(([uid,u]) => `<div class="member-opt" onclick="addSpAssignee('${uid}')">
+      <div class="avatar" style="width:22px;height:22px;font-size:9px;margin-left:0">${initials(u.name)}</div>
+      ${esc(u.name)} <span style="color:var(--gray5);font-size:11px">${esc(u.dept||'')}</span></div>`).join('')
+    || '<div style="padding:10px;font-size:12px;color:var(--gray5)">Everyone is already assigned</div>';
+}
+function addSpAssignee(uid) { if (!spModalAssignees.includes(uid)) spModalAssignees.push(uid); renderSpAssigneeChips(); document.getElementById('spm-member-dd').classList.remove('open'); }
+function removeSpAssignee(uid) { spModalAssignees = spModalAssignees.filter(u => u !== uid); renderSpAssigneeChips(); }
+
+async function saveSubproject() {
+  const id = document.getElementById('spm-id').value;
+  const projectId = document.getElementById('spm-project-id').value;
+  const title = document.getElementById('spm-title').value.trim();
+  if (!title) { toast('Sub-project title is required','error'); return; }
+  if (!projectId) { toast('Missing parent project','error'); return; }
+  const data = {
+    projectId, title,
+    desc: document.getElementById('spm-desc').value.trim(),
+    status: document.getElementById('spm-status').value,
+    priority: document.getElementById('spm-priority').value,
+    due: document.getElementById('spm-due').value,
+    assignees: spModalAssignees,
+    updatedAt: Date.now()
+  };
+  if (id) await db.ref(`subprojects/${id}`).update(data);
+  else { data.createdAt = Date.now(); data.createdBy = currentUser.uid; data.archived = false; await db.ref('subprojects').push(data); }
+  logActivity('project', `${currentProfile.name} ${id?'updated':'created'} sub-project "${title}"`);
+  toast(id ? 'Sub-project updated' : 'Sub-project created ✓','success');
+  closeModalX('sp-modal-overlay');
+  if (detailType === 'project' || detailType === 'subproject') refreshProjectsView();
+}
+
+async function archiveSubproject(id) {
+  const sp = allSubprojects[id];
+  if (!sp) return;
+  if (!confirm(`Archive sub-project "${sp.title}"? Its tasks will be archived too.`)) return;
+  const updates = { [`subprojects/${id}/archived`]: true, [`subprojects/${id}/archivedAt`]: Date.now() };
+  Object.entries(allTasks).forEach(([tid,t]) => { if (t.subprojectId === id) updates[`tasks/${tid}/archived`] = true; });
+  await db.ref().update(updates);
+  toast('Sub-project archived 📦','success');
+  if (detailType === 'subproject' && detailId === id) closeDetailModal();
+  else if (detailType === 'project') refreshProjectsView();
+}
+
+async function deleteSubproject(id) {
+  if (!confirm('Permanently delete this sub-project and its tasks?')) return;
+  const updates = { [`subprojects/${id}`]: null, [`comments/subproject_${id}`]: null };
+  Object.entries(allTasks).forEach(([tid,t]) => { if (t.subprojectId === id) { updates[`tasks/${tid}`] = null; updates[`comments/task_${tid}`] = null; } });
+  await db.ref().update(updates);
+  toast('Sub-project deleted');
+  if (detailType === 'subproject' && detailId === id) closeDetailModal();
+  else if (detailType === 'project') refreshProjectsView();
+}
+
+// ═══════════ SUBTASK MODAL ═══════════
+function openSubtaskModal(taskId, id) {
+  const t = allTasks[taskId];
+  const st = id && t && t.subtasks ? t.subtasks[id] : null;
+  document.getElementById('subtask-modal-title').textContent = id ? 'Edit Subtask' : 'New Subtask';
+  document.getElementById('stm-task-id').value = taskId;
+  document.getElementById('stm-id').value = id || '';
+  document.getElementById('stm-assignee').innerHTML = '<option value="">Unassigned</option>' + Object.entries(allUsers).map(([uid,u])=>`<option value="${uid}">${esc(u.name)}</option>`).join('');
+  document.getElementById('stm-title').value = st ? st.title||'' : '';
+  document.getElementById('stm-assignee').value = st ? st.assignee||'' : '';
+  document.getElementById('stm-due').value = st ? st.due||'' : '';
+  document.getElementById('stm-status').value = st ? st.status||'todo' : 'todo';
+  document.getElementById('subtask-modal-overlay').classList.add('open');
+}
+
+async function saveSubtask() {
+  const taskId = document.getElementById('stm-task-id').value;
+  const id = document.getElementById('stm-id').value;
+  const title = document.getElementById('stm-title').value.trim();
+  if (!title || !taskId) { toast('Subtask title is required','error'); return; }
+  if (!document.getElementById('stm-due').value) { toast('Due date is required — subtasks are time-bound','error'); return; }
+  const status = document.getElementById('stm-status').value;
+  const data = {
+    title,
+    assignee: document.getElementById('stm-assignee').value || '',
+    due: document.getElementById('stm-due').value || '',
+    status,
+    updatedAt: Date.now()
+  };
+  if (status === 'done') data.completedAt = (id && allTasks[taskId] && allTasks[taskId].subtasks && allTasks[taskId].subtasks[id] && allTasks[taskId].subtasks[id].completedAt) || Date.now();
+  else data.completedAt = null;
+  if (id) await db.ref(`tasks/${taskId}/subtasks/${id}`).update(data);
+  else { data.createdAt = Date.now(); await db.ref(`tasks/${taskId}/subtasks`).push(data); }
+  toast(id ? 'Subtask updated' : 'Subtask added ✓','success');
+  closeModalX('subtask-modal-overlay');
+  if (detailType === 'task' && detailId === taskId) refreshProjectsView();
+}
+
+async function toggleSubtaskDone(taskId, stid) {
+  const t = allTasks[taskId];
+  if (!t || !t.subtasks || !t.subtasks[stid]) return;
+  const done = t.subtasks[stid].status !== 'done';
+  await db.ref(`tasks/${taskId}/subtasks/${stid}`).update({ status: done?'done':'todo', completedAt: done?Date.now():null, updatedAt: Date.now() });
+  if (detailType === 'task' && detailId === taskId) refreshProjectsView();
+}
+
+async function deleteSubtask(taskId, stid) {
+  if (!confirm('Delete this subtask?')) return;
+  await db.ref(`tasks/${taskId}/subtasks/${stid}`).remove();
+  if (detailType === 'task' && detailId === taskId) refreshProjectsView();
+}
+
+async function toggleTaskDone(id) {
+  const t = allTasks[id];
+  if (!t) return;
+  const done = t.status !== 'done';
+  await db.ref(`tasks/${id}`).update({
+    status: done ? 'done' : 'todo',
+    completedAt: done ? Date.now() : null,
+    updatedAt: Date.now()
+  });
+  if (done) logActivity('done', `${currentProfile.name} completed "${t.title}"`);
+}
+
+async function deleteTask(id) {
+  if (!confirm('Delete this task permanently?')) return;
+  await db.ref().update({ [`tasks/${id}`]: null, [`comments/task_${id}`]: null });
+  toast('Task deleted');
+}
+
+// ═══════════ DETAIL MODAL + COMMENTS ═══════════
+let detailType = null, detailId = null, detailCommentListener = null;
+
+// openDetail now routes into the full-page drill-down (except notes, which stay a modal)
+function openDetail(type, id) {
+  if (type === 'project') return openProjectPage(id);
+  if (type === 'subproject') return openSubprojectPage(id);
+  if (type === 'task') return openTaskPage(id);
+  // fallback (notes etc.) — legacy modal
+  detailType = type; detailId = id;
+  document.getElementById('detail-modal-overlay').classList.add('open');
+  refreshProjectsView();
+}
+
+function refreshProjectsView() { if (currentPage === 'projects') renderProjectsPage(); }
+
+function closeDetailModal(e) {
+  if (e && e.target !== document.getElementById('detail-modal-overlay')) return;
+  if (detailType === 'note' && detailCommentListener) { /* notes have no comments */ }
+  document.getElementById('detail-modal-overlay').classList.remove('open');
+}
+
+function subprojectRowHtml(spid, s) {
+  const prog = subprojectProgress(spid);
+  const nTasks = tasksOfSubproject(spid).length;
+  return `<div class="task-row" style="margin-bottom:6px" onclick="openDetail('subproject','${spid}')">
+    <span style="font-size:15px">📂</span>
+    <div style="flex:1;min-width:0">
+      <div style="font-weight:600;font-size:13px">${esc(s.title)}</div>
+      <div class="progress-bar" style="margin-top:5px"><div class="progress-fill ${prog>=100?'green':''}" style="width:${prog}%"></div></div>
+    </div>
+    ${statusBadge(s.status)}
+    <span class="badge badge-gray">${prog}% · ${nTasks}t</span>
+    ${isAdmin() ? `<span onclick="event.stopPropagation()" style="display:flex;gap:2px">
+      <button class="btn-icon btn btn-sm" title="Edit" onclick="openSubprojectModal('${s.projectId}','${spid}')">✏️</button>
+      <button class="btn-icon btn btn-sm" title="Archive" onclick="archiveSubproject('${spid}')">📦</button></span>` : ''}
+  </div>`;
+}
+
+function taskRowInDetailHtml(tid, t) {
+  const subs = subtasksOf(t);
+  const stBadge = subs.length ? `<span class="badge badge-gray">☑ ${subs.filter(([,s])=>s.status==='done').length}/${subs.length}</span>` : '';
+  return `<div class="task-row" style="margin-bottom:6px" onclick="openDetail('task','${tid}')">
+    <div class="task-check ${t.status==='done'?'done':''}" onclick="event.stopPropagation();toggleTaskDone('${tid}')">${t.status==='done'?'✓':''}</div>
+    <div class="task-title ${t.status==='done'?'done':''}">${esc(t.title)}</div>
+    ${stBadge}
+    ${priorityBadge(t.priority)}
+    ${t.assignee && allUsers[t.assignee] ? `<span class="badge badge-gray">${esc(allUsers[t.assignee].name)}</span>` : ''}
+  </div>`;
+}
+
+function teamBlockHtml(assignees) {
+  if (!assignees || !assignees.length) return '';
+  return `<div style="margin-bottom:14px">
+    <div style="font-size:12px;font-weight:600;color:var(--gray6);margin-bottom:6px">TEAM</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      ${assignees.map(uid => allUsers[uid] ? `<div style="display:flex;align-items:center;gap:6px;background:var(--gray2);border-radius:99px;padding:4px 10px"><div class="avatar" style="width:22px;height:22px;font-size:9px;margin-left:0">${initials(allUsers[uid].name)}</div><span style="font-size:12px;font-weight:600">${esc(allUsers[uid].name)}</span></div>` : '').join('')}
+    </div></div>`;
+}
+
+function renderDetailModal() {
+  if (!detailType || !detailId) return;
+  const body = document.getElementById('detail-modal-body');
+
+  if (detailType === 'project') {
+    const p = allProjects[detailId];
+    if (!p) { closeDetailModal(); return; }
+    document.getElementById('detail-modal-title').textContent = (p.archived?'📦 ':'') + p.title;
+    const subs = activeSubprojects(detailId);
+    const directTasks = directTasksOfProject(detailId);
+    const resList = Object.entries(allResources).filter(([,r]) => r.projectId === detailId);
+    const auto = projectAutoProgress(detailId);
+    const dispPct = auto === null ? (p.progress||0) : auto;
+    const showManual = isAdmin() && !p.archived && auto === null;
+
+    body.innerHTML = `
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+        ${statusBadge(p.status)} ${priorityBadge(p.priority)}
+        ${p.dept ? `<span class="badge badge-blue">${esc(p.dept)}</span>` : ''}
+        ${p.due ? `<span class="badge badge-gray">📅 Due ${fmtDate(p.due)}</span>` : ''}
+        ${p.archived ? '<span class="badge badge-gray">Archived</span>' : ''}
+      </div>
+      ${p.desc ? `<p style="font-size:14px;color:var(--gray7);margin-bottom:16px;line-height:1.6">${esc(p.desc)}</p>` : ''}
+      <div style="margin-bottom:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:10px">
+          <span style="font-size:12px;font-weight:600;color:var(--gray6)">PROGRESS ${auto!==null?'<span style="font-weight:400;text-transform:none">(auto from tasks)</span>':''}</span>
+          ${showManual ? `<input type="range" min="0" max="100" value="${p.progress||0}" style="width:160px" oninput="updateProjProgress(this.value)"/>` : ''}
+          <span style="font-size:13px;font-weight:700;color:var(--brand)" id="detail-prog-pct">${dispPct}%</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill ${dispPct>=100?'green':''}" id="detail-prog-fill" style="width:${dispPct}%"></div></div>
+      </div>
+      ${teamBlockHtml(p.assignees)}
+
+      <div style="margin-bottom:14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <span style="font-size:13px;font-weight:700">📂 Sub-projects (${subs.length})</span>
+          ${isAdmin() && !p.archived ? `<button class="btn btn-primary btn-sm" onclick="openSubprojectModal('${detailId}')">＋ Sub-project</button>` : ''}
+        </div>
+        ${subs.length ? subs.map(([spid,s])=>subprojectRowHtml(spid,s)).join('') : '<p style="font-size:13px;color:var(--gray5)">No sub-projects yet</p>'}
+      </div>
+
+      <div style="margin-bottom:14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <span style="font-size:13px;font-weight:700">Direct Tasks (${directTasks.length})</span>
+          ${!p.archived ? `<button class="btn btn-ghost btn-sm" onclick="closeDetailModal();openTaskModal(null,'${detailId}')">＋ Add Task</button>` : ''}
+        </div>
+        ${directTasks.length ? directTasks.map(([tid,t])=>taskRowInDetailHtml(tid,t)).join('') : '<p style="font-size:13px;color:var(--gray5)">No direct tasks — add tasks here or inside a sub-project</p>'}
+      </div>
+
+      ${resList.length ? `<div style="margin-bottom:14px">
+        <span style="font-size:13px;font-weight:700">📚 Resources (${resList.length})</span>
+        ${resList.map(([rid,r]) => `<div style="font-size:13px;padding:5px 0">${{link:'🔗',note:'📝',file:'📄'}[r.type]||'📚'} ${r.type==='link' ? `<a href="${esc(r.url)}" target="_blank" rel="noopener" style="color:var(--brand)">${esc(r.title)} ↗</a>` : esc(r.title)}</div>`).join('')}
+      </div>` : ''}
+      ${commentsHtml()}`;
+
+  } else if (detailType === 'subproject') {
+    const s = allSubprojects[detailId];
+    if (!s) { closeDetailModal(); return; }
+    const parent = allProjects[s.projectId];
+    document.getElementById('detail-modal-title').textContent = (s.archived?'📦 ':'📂 ') + s.title;
+    const spTasks = tasksOfSubproject(detailId);
+    const prog = subprojectProgress(detailId);
+
+    body.innerHTML = `
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
+        ${parent ? `<span class="badge badge-blue" style="cursor:pointer" onclick="openDetail('project','${s.projectId}')">📁 ${esc(parent.title)} ↗</span>` : ''}
+        ${statusBadge(s.status)} ${priorityBadge(s.priority)}
+        ${s.due ? `<span class="badge badge-gray">📅 Due ${fmtDate(s.due)}</span>` : ''}
+        ${isAdmin() ? `<span style="margin-left:auto;display:flex;gap:6px">
+          <button class="btn btn-ghost btn-sm" onclick="openSubprojectModal('${s.projectId}','${detailId}')">✏️ Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="archiveSubproject('${detailId}')">📦 Archive</button></span>` : ''}
+      </div>
+      ${s.desc ? `<p style="font-size:14px;color:var(--gray7);margin-bottom:16px;line-height:1.6">${esc(s.desc)}</p>` : ''}
+      <div style="margin-bottom:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <span style="font-size:12px;font-weight:600;color:var(--gray6)">PROGRESS <span style="font-weight:400;text-transform:none">(auto from tasks)</span></span>
+          <span style="font-size:13px;font-weight:700;color:var(--brand)">${prog}%</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill ${prog>=100?'green':''}" style="width:${prog}%"></div></div>
+      </div>
+      ${teamBlockHtml(s.assignees)}
+      <div style="margin-bottom:14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <span style="font-size:13px;font-weight:700">Tasks (${spTasks.length})</span>
+          ${!s.archived ? `<button class="btn btn-primary btn-sm" onclick="closeDetailModal();openTaskModal(null,'${s.projectId}','${detailId}')">＋ Add Task</button>` : ''}
+        </div>
+        ${spTasks.length ? spTasks.map(([tid,t])=>taskRowInDetailHtml(tid,t)).join('') : '<p style="font-size:13px;color:var(--gray5)">No tasks yet</p>'}
+      </div>
+      ${commentsHtml()}`;
+
+  } else if (detailType === 'task') {
+    const t = allTasks[detailId];
+    if (!t) { closeDetailModal(); return; }
+    document.getElementById('detail-modal-title').textContent = t.title;
+    const proj = t.projectId && allProjects[t.projectId] ? allProjects[t.projectId] : null;
+    const sp = t.subprojectId && allSubprojects[t.subprojectId] ? allSubprojects[t.subprojectId] : null;
+    const assignee = t.assignee && allUsers[t.assignee] ? allUsers[t.assignee] : null;
+    const subs = subtasksOf(t);
+    const tprog = taskProgress(t);
+
+    body.innerHTML = `
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+        ${taskStatusBadge(t.status)} ${priorityBadge(t.priority)}
+        ${proj ? `<span class="badge badge-blue" style="cursor:pointer" onclick="openDetail('project','${t.projectId}')">📁 ${esc(proj.title)}</span>` : ''}
+        ${sp ? `<span class="badge badge-blue" style="cursor:pointer" onclick="openDetail('subproject','${t.subprojectId}')">📂 ${esc(sp.title)}</span>` : ''}
+        ${t.due ? `<span class="badge ${t.due < today() && t.status!=='done' ? 'badge-red':'badge-gray'}">📅 ${fmtDate(t.due)}</span>` : ''}
+      </div>
+      ${t.desc ? `<p style="font-size:14px;color:var(--gray7);margin-bottom:16px;line-height:1.6">${esc(t.desc)}</p>` : ''}
+      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end">
+        ${assignee ? `<div><div style="font-size:11px;font-weight:600;color:var(--gray5);margin-bottom:4px">ASSIGNED TO</div>
+          <div style="display:flex;align-items:center;gap:6px"><div class="avatar" style="width:26px;height:26px;font-size:10px;margin-left:0">${initials(assignee.name)}</div><span style="font-size:13px;font-weight:600">${esc(assignee.name)}</span></div></div>` : ''}
+        <div style="margin-left:auto;display:flex;gap:8px">
+          <select style="padding:6px;border:1.5px solid var(--gray3);border-radius:7px;font-size:13px" onchange="updateTaskStatus('${detailId}',this.value)">
+            <option value="todo" ${t.status==='todo'?'selected':''}>To Do</option>
+            <option value="in-progress" ${t.status==='in-progress'?'selected':''}>In Progress</option>
+            <option value="review" ${t.status==='review'?'selected':''}>In Review</option>
+            <option value="done" ${t.status==='done'?'selected':''}>Done</option>
+          </select>
+          <button class="btn btn-ghost btn-sm" onclick="closeDetailModal();openTaskModal('${detailId}')">✏️ Edit</button>
+        </div>
+      </div>
+
+      <div style="margin-bottom:8px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <span style="font-size:13px;font-weight:700">☑ Subtasks (${subs.filter(([,x])=>x.status==='done').length}/${subs.length})</span>
+          <button class="btn btn-primary btn-sm" onclick="openSubtaskModal('${detailId}')">＋ Add Subtask</button>
+        </div>
+        ${subs.length ? `<div class="progress-bar" style="margin-bottom:8px"><div class="progress-fill ${tprog>=100?'green':''}" style="width:${tprog}%"></div></div>` : ''}
+        ${subs.length ? subs.map(([stid,st])=>`
+          <div class="task-row" style="margin-bottom:6px" onclick="openSubtaskModal('${detailId}','${stid}')">
+            <div class="task-check ${st.status==='done'?'done':''}" onclick="event.stopPropagation();toggleSubtaskDone('${detailId}','${stid}')">${st.status==='done'?'✓':''}</div>
+            <div class="task-title ${st.status==='done'?'done':''}" style="flex:1">${esc(st.title)}</div>
+            ${st.status && st.status!=='todo' && st.status!=='done' ? taskStatusBadge(st.status) : ''}
+            ${st.assignee && allUsers[st.assignee] ? `<span class="badge badge-gray">${esc(allUsers[st.assignee].name)}</span>` : ''}
+            ${st.due ? `<span class="badge ${st.due<today()&&st.status!=='done'?'badge-red':'badge-gray'}">${fmtDate(st.due)}</span>` : ''}
+            <button class="btn-icon btn btn-sm" onclick="event.stopPropagation();deleteSubtask('${detailId}','${stid}')">✕</button>
+          </div>`).join('') : '<p style="font-size:13px;color:var(--gray5)">No subtasks — break this task down into steps</p>'}
+      </div>
+      ${commentsHtml()}`;
+  }
+  if (detailType === 'project' || detailType === 'task' || detailType === 'subproject') loadComments();
+}
+
+function updateProjProgress(val) {
+  const pct = document.getElementById('detail-prog-pct');
+  const fill = document.getElementById('detail-prog-fill');
+  if (pct) pct.textContent = val+'%';
+  if (fill) { fill.style.width = val+'%'; fill.className = 'progress-fill'+(parseInt(val)>=100?' green':''); }
+  clearTimeout(window._progTimer);
+  window._progTimer = setTimeout(async () => {
+    await db.ref(`projects/${detailId}/progress`).set(parseInt(val));
+    logActivity('update', `${currentProfile.name} set progress on "${allProjects[detailId] ? allProjects[detailId].title : ''}" to ${val}%`);
+  }, 600);
+}
+
+async function updateTaskStatus(tid, status) {
+  const upd = { status, updatedAt: Date.now() };
+  upd.completedAt = status === 'done' ? Date.now() : null;
+  await db.ref(`tasks/${tid}`).update(upd);
+  logActivity('update', `${currentProfile.name} moved a task to ${status}`);
+}
+
+function commentsHtml() {
+  return `<div class="comments-section">
+    <div style="font-size:13px;font-weight:700;margin-bottom:12px">💬 Comments</div>
+    <div class="comment-list" id="comment-list"><div style="color:var(--gray5);font-size:13px">Loading…</div></div>
+    <div class="comment-input-area">
+      <textarea class="comment-textarea" id="comment-input" placeholder="Write a comment… @mention someone" rows="2" onkeydown="commentKeydown(event)" oninput="checkMention(this)"></textarea>
+      <button class="btn btn-primary btn-sm" onclick="submitComment()">Send</button>
+      <div class="mention-dropdown" id="inline-mention-dd" style="bottom:52px;left:0"></div>
+    </div>
+  </div>`;
+}
+
+let mentionStart = -1;
+
+function loadComments() {
+  if (detailCommentListener) db.ref(`comments/${detailType}_${detailId}`).off('value', detailCommentListener);
+  const ref = db.ref(`comments/${detailType}_${detailId}`).orderByChild('createdAt');
+  detailCommentListener = ref.on('value', snap => {
+    const list = document.getElementById('comment-list');
+    if (!list) return;
+    const comments = []; snap.forEach(c => comments.push({id:c.key,...c.val()}));
+    list.innerHTML = comments.length ? comments.map(c => `
+      <div class="comment-item">
+        <div class="comment-avatar">${initials(c.authorName||'?')}</div>
+        <div class="comment-body">
+          <div class="comment-meta"><span class="comment-author">${esc(c.authorName||'Unknown')}</span><span class="comment-time">${relTime(c.createdAt)}</span></div>
+          <div class="comment-text">${renderMentions(esc(c.text))}</div>
+        </div>
+      </div>`).join('') : '<div style="color:var(--gray5);font-size:13px;padding:6px 0">No comments yet — be the first!</div>';
+    list.scrollTop = list.scrollHeight;
+  });
+}
+
+function renderMentions(text) {
+  return text.replace(/@(\w+(?:\s\w+)?)/g, '<span class="mention">@$1</span>');
+}
+
+function commentKeydown(e) {
+  const dd = document.getElementById('inline-mention-dd');
+  if (dd && dd.classList.contains('open')) {
+    const opts = dd.querySelectorAll('.mention-opt');
+    const active = dd.querySelector('.mention-opt.active');
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      const idx = active ? [...opts].indexOf(active) : (e.key==='ArrowDown' ? -1 : opts.length);
+      if (active) active.classList.remove('active');
+      const next = opts[idx + (e.key==='ArrowDown'?1:-1)];
+      if (next) next.classList.add('active');
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      (active || opts[0]) && (active || opts[0]).click();
+    } else if (e.key === 'Escape') { dd.classList.remove('open'); dd.innerHTML=''; }
+    return;
+  }
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitComment(); }
+}
+
+function checkMention(ta) {
+  const before = ta.value.slice(0, ta.selectionStart);
+  const match = before.match(/@(\w*)$/);
+  const dd = document.getElementById('inline-mention-dd');
+  if (!dd) return;
+  if (!match) { dd.classList.remove('open'); dd.innerHTML=''; mentionStart=-1; return; }
+  const q = match[1].toLowerCase();
+  mentionStart = before.lastIndexOf('@');
+  const matches = Object.entries(allUsers).filter(([,u]) => (u.name||'').toLowerCase().includes(q));
+  if (!matches.length) { dd.classList.remove('open'); dd.innerHTML=''; return; }
+  dd.innerHTML = matches.map(([uid,u]) => `
+    <div class="mention-opt" onclick="insertMention('${(u.name||'').replace(/'/g,"\\'")}')">
+      <div class="avatar" style="width:22px;height:22px;font-size:9px;margin-left:0">${initials(u.name)}</div>
+      ${esc(u.name)} <span style="color:var(--gray5);font-size:11px">${esc(u.dept||'')}</span>
+    </div>`).join('');
+  dd.classList.add('open');
+}
+
+function insertMention(name) {
+  const ta = document.getElementById('comment-input');
+  const pos = ta.selectionStart;
+  ta.value = ta.value.slice(0, mentionStart) + '@' + name + ' ' + ta.value.slice(pos);
+  ta.selectionStart = ta.selectionEnd = mentionStart + name.length + 2;
+  ta.focus();
+  const dd = document.getElementById('inline-mention-dd');
+  dd.classList.remove('open'); dd.innerHTML='';
+  mentionStart = -1;
+}
+
+async function submitComment() {
+  const ta = document.getElementById('comment-input');
+  const text = ta.value.trim();
+  if (!text || !detailType || !detailId) return;
+  const mentionNames = [...text.matchAll(/@(\w+(?:\s+\w+)?)/g)].map(m => m[1].toLowerCase());
+  const mentionUids = Object.entries(allUsers)
+    .filter(([,u]) => mentionNames.some(n => (u.name||'').toLowerCase() === n || (u.name||'').toLowerCase().split(' ')[0] === n))
+    .map(([uid]) => uid);
+  await db.ref(`comments/${detailType}_${detailId}`).push({
+    text, authorUid: currentUser.uid, authorName: currentProfile.name, mentions: mentionUids, createdAt: Date.now()
+  });
+  const target = detailType==='project' ? (allProjects[detailId]||{}).title : (allTasks[detailId]||{}).title;
+  logActivity('comment', `${currentProfile.name} commented on "${target||''}"`);
+  ta.value = '';
+}
+
+// ═══════════ SHARED MODAL HELPERS ═══════════
+function closeModal(e, id) { if (e.target === document.getElementById(id)) document.getElementById(id).classList.remove('open'); }
+function closeModalX(id) { document.getElementById(id).classList.remove('open'); }
+
+// ═══════════ ACTIVITY + HELPERS ═══════════
+function logActivity(type, msg) {
+  db.ref('activity').push({ type, msg, authorUid: currentUser ? currentUser.uid : '', createdAt: Date.now() });
+}
+function actIcon(type) {
+  const icons = { joined:'👋', project:'📁', task:'✅', done:'🎉', comment:'💬', update:'🔄', area:'🔄', resource:'📚', meeting:'🗓️', archive:'📦' };
+  return icons[type] || '•';
+}
+function esc(s) {
+  if (s === null || s === undefined) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function initials(name) {
+  if (!name) return '?';
+  return name.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+}
+function today() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function fmtDate(ds) {
+  if (!ds) return '';
+  const dt = new Date(ds+'T00:00:00');
+  return dt.toLocaleDateString('en-IN',{month:'short',day:'numeric'});
+}
+function relTime(ts) {
+  if (!ts) return '';
+  const diff = Date.now() - ts;
+  if (diff < 60000) return 'just now';
+  if (diff < 3600000) return Math.floor(diff/60000)+'m ago';
+  if (diff < 86400000) return Math.floor(diff/3600000)+'h ago';
+  return Math.floor(diff/86400000)+'d ago';
+}
+function statusBadge(s) {
+  const map = { planning:'badge-gray',active:'badge-green','on-hold':'badge-amber',review:'badge-blue',done:'badge-purple' };
+  const label = { planning:'Planning',active:'Active','on-hold':'On Hold',review:'In Review',done:'Done' };
+  return s ? `<span class="badge ${map[s]||'badge-gray'}">${label[s]||s}</span>` : '';
+}
+function taskStatusBadge(s) {
+  const map = { todo:'badge-gray','in-progress':'badge-blue',review:'badge-amber',done:'badge-green' };
+  const label = { todo:'To Do','in-progress':'In Progress',review:'In Review',done:'Done' };
+  return s ? `<span class="badge ${map[s]||'badge-gray'}">${label[s]||s}</span>` : '';
+}
+function priorityBadge(p) {
+  if (!p || p === 'normal') return '';
+  const map = { high:'badge-amber',critical:'badge-red',low:'badge-gray' };
+  return `<span class="badge ${map[p]||'badge-gray'}">${p.charAt(0).toUpperCase()+p.slice(1)}</span>`;
+}
+function emptyState(icon, h, sub) {
+  return `<div class="empty-state" style="grid-column:1/-1"><div class="es-icon">${icon}</div><h3>${h}</h3>${sub?`<p>${sub}</p>`:''}</div>`;
+}
+function toast(msg, type) {
+  const c = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = 'toast'+(type?' '+type:'');
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 3200);
+}
+
+// ═══════════ MANAGER DASHBOARD (My Team) ═══════════
+function renderManagerDashboard() {
+  const body = document.getElementById('page-body');
+  document.getElementById('topbar-actions').innerHTML = '';
+  const reports = myReports();
+  if (!reports.length) {
+    body.innerHTML = emptyState('🧑‍💼','No direct reports',"Nobody reports to you yet. When an admin sets you as someone's reporting manager, they'll appear here.");
+    return;
+  }
+  if (mgrViewUid && allUsers[mgrViewUid] && reports.includes(mgrViewUid)) { renderReportWorkspace(mgrViewUid); return; }
+  mgrViewUid = null;
+  const tToday = today();
+  body.innerHTML = `
+    <div class="section-sub" style="margin-bottom:18px">Your direct reports. Click a person to view all their Projects, Areas, Resources, and Archives. You can view, comment, and verify — their work stays theirs.</div>
+    <div class="card-grid" style="grid-template-columns:repeat(auto-fill,minmax(250px,1fr))">
+      ${reports.map(uid => {
+        const u = allUsers[uid];
+        const proj = projectsOfUser(uid);
+        const openT = Object.values(allTasks).filter(t => !t.archived && t.status!=='done' && t.assignee===uid);
+        const overdue = openT.filter(t => t.due && t.due < tToday);
+        return `<div class="proj-card" onclick="viewReport('${uid}')">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+            <div class="member-avatar">${initials(u.name)}</div>
+            <div><div class="proj-title">${esc(u.name)}</div><div class="proj-dept">${esc(u.dept||'Unassigned')}</div></div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <span class="badge badge-blue">${proj.length} project${proj.length!==1?'s':''}</span>
+            <span class="badge badge-amber">${openT.length} open</span>
+            ${overdue.length?`<span class="badge badge-red">${overdue.length} overdue</span>`:''}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+function viewReport(uid) { mgrViewUid = uid; renderManagerDashboard(); }
+function backToTeam() { mgrViewUid = null; renderManagerDashboard(); }
+
+function renderReportWorkspace(uid) {
+  const body = document.getElementById('page-body');
+  const u = allUsers[uid];
+  const projects = projectsOfUser(uid);
+  const areas = areasOfUser(uid);
+  const resources = resourcesOfUser(uid);
+  const archived = archivedProjectsOfUser(uid);
+  body.innerHTML = `
+    <div class="breadcrumb"><span class="crumb" onclick="backToTeam()">🧑‍💼 My Team</span><span class="crumb-sep">/</span><span class="crumb current">${esc(u.name)}</span></div>
+    <div class="page-head"><div class="page-head-top"><div style="display:flex;align-items:center;gap:12px">
+      <div class="member-avatar">${initials(u.name)}</div>
+      <div><h1>${esc(u.name)}</h1><div class="ph-badges">${u.dept?`<span class="badge badge-blue">${esc(u.dept)}</span>`:''}<span class="badge badge-gray">${esc(u.email||'')}</span></div></div>
+    </div></div></div>
+
+    <div class="section-header"><div class="section-title">📁 Projects (${projects.length})</div></div>
+    <div class="card-grid" style="margin-bottom:24px">
+      ${projects.length ? projects.map(([id,p])=>projCardHtml(id,p)).join('') : emptyState('📁','No projects','')}
+    </div>
+
+    <div class="section-header"><div class="section-title">🔄 Areas (${areas.length})</div></div>
+    <div class="card-grid" style="margin-bottom:24px">
+      ${areas.length ? areas.map(([id,a])=>{
+        const routines = Object.entries(a.routines||{});
+        return `<div class="area-card"><div class="proj-title">${esc(a.title)}</div>${a.desc?`<div class="proj-desc">${esc(a.desc)}</div>`:''}<div style="font-size:12px;color:var(--gray5);margin-top:6px">${routines.length} routine${routines.length!==1?'s':''}</div></div>`;
+      }).join('') : emptyState('🔄','No areas','')}
+    </div>
+
+    <div class="section-header"><div class="section-title">📚 Resources (${resources.length})</div></div>
+    <div class="card-grid" style="margin-bottom:24px;grid-template-columns:repeat(auto-fill,minmax(240px,1fr))">
+      ${resources.length ? resources.map(([id,r])=>`<div class="res-card"><div class="res-icon">${{link:'🔗',note:'📝',file:'📄'}[r.type]||'📚'}</div><div class="res-title">${esc(r.title)}</div>${r.type==='link'?`<a class="btn btn-primary btn-sm" href="${esc(r.url)}" target="_blank" rel="noopener" style="margin-top:8px">Open ↗</a>`:''}</div>`).join('') : emptyState('📚','No resources','')}
+    </div>
+
+    <div class="section-header"><div class="section-title">📦 Archived (${archived.length})</div></div>
+    <div class="card-grid">
+      ${archived.length ? archived.map(([id,p])=>`<div class="proj-card" style="opacity:.85" onclick="openProjectPage('${id}')"><div class="proj-title">${esc(p.title)}</div><div class="proj-dept">archived ${relTime(p.archivedAt)}</div></div>`).join('') : emptyState('📦','Nothing archived','')}
+    </div>`;
+}
+
+// ═══════════ ADMIN MASTER (bulk user creation) ═══════════
+let masterRowSeq = 0;
+let masterCreated = [];
+
+function renderAdminMasterPage() {
+  if (!isAdmin()) { navTo('dashboard'); return; }
+  const body = document.getElementById('page-body');
+  document.getElementById('topbar-actions').innerHTML = '';
+  masterCreated = [];
+  body.innerHTML = `
+    <div class="card" style="margin-bottom:18px">
+      <div class="section-header"><div><div class="section-title">🔑 Create Employee Accounts</div>
+        <div class="section-sub">Add rows for each employee. Their <strong>phone number becomes the temporary password</strong> — they can reset it later from “🔒 Change Password”. Accounts are created instantly.</div></div></div>
+      <div style="overflow-x:auto">
+        <table class="master-table" id="master-table" style="min-width:820px">
+          <thead><tr><th style="width:20%">Full Name *</th><th style="width:24%">Email *</th><th style="width:18%">Phone (= password) *</th><th style="width:17%">Department</th><th style="width:18%">Reporting Manager</th><th></th></tr></thead>
+          <tbody id="master-rows"></tbody>
+        </table>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-sm" onclick="addMasterRow()">＋ Add Row</button>
+        <button class="btn btn-ghost btn-sm" onclick="addMasterRow(5)">＋ Add 5 Rows</button>
+        <button class="btn btn-primary" style="margin-left:auto" onclick="createAllUsers()">✓ Create All Accounts</button>
+      </div>
+      <div class="form-hint" style="margin-top:8px">Phone must be at least 6 characters (Firebase password minimum). Include country code if you like.</div>
+    </div>
+    <div id="master-results"></div>`;
+  masterRowSeq = 0;
+  addMasterRow(3);
+}
+
+function addMasterRow(n) {
+  n = (typeof n === 'number' && n > 0) ? n : 1;
+  const tbody = document.getElementById('master-rows');
+  if (!tbody) return;
+  for (let i = 0; i < n; i++) {
+    const id = 'mr' + (masterRowSeq++);
+    const tr = document.createElement('tr');
+    tr.id = id;
+    const mgrOpts = '<option value="">— none —</option>' + Object.entries(allUsers).map(([mid,mu])=>`<option value="${mid}">${esc(mu.name)}</option>`).join('');
+    tr.innerHTML = `
+      <td><input type="text" data-f="name" placeholder="Jane Doe"/></td>
+      <td><input type="email" data-f="email" placeholder="jane@company.com"/></td>
+      <td><input type="text" data-f="phone" placeholder="9876543210"/></td>
+      <td><select data-f="dept"><option value="">Unassigned</option>${allDepts.map(d=>`<option value="${esc(d)}">${esc(d)}</option>`).join('')}</select></td>
+      <td><select data-f="manager">${mgrOpts}</select></td>
+      <td><button class="btn-icon btn" title="Remove row" onclick="document.getElementById('${id}').remove()">✕</button></td>`;
+    tbody.appendChild(tr);
+  }
+}
+
+async function createAllUsers() {
+  const rows = [...document.querySelectorAll('#master-rows tr')];
+  const entries = rows.map(r => {
+    const g = f => { const el = r.querySelector(`[data-f="${f}"]`); return el ? el.value.trim() : ''; };
+    return { name:g('name'), email:g('email'), phone:g('phone'), dept:g('dept'), manager:g('manager') };
+  }).filter(e => e.name || e.email || e.phone);
+
+  if (!entries.length) { toast('Add at least one employee row','error'); return; }
+  // validate
+  for (const e of entries) {
+    if (!e.name || !e.email || !e.phone) { toast(`Missing fields for "${e.name||e.email||'a row'}"`,'error'); return; }
+    if (e.phone.length < 6) { toast(`Phone for "${e.name}" must be ≥ 6 characters (used as password)`,'error'); return; }
+    if (!/^\S+@\S+\.\S+$/.test(e.email)) { toast(`Invalid email for "${e.name}"`,'error'); return; }
+  }
+
+  const resBox = document.getElementById('master-results');
+  resBox.innerHTML = `<div class="card"><div class="section-title" style="margin-bottom:10px">Creating ${entries.length} account(s)…</div><div id="master-progress"></div></div>`;
+  const prog = document.getElementById('master-progress');
+  const results = [];
+  for (const e of entries) {
+    try {
+      await adminCreateUser(e.name, e.email, e.phone, e.dept, e.manager);
+      results.push({ ...e, ok:true });
+      prog.innerHTML += `<div style="font-size:13px;padding:3px 0;color:var(--green)">✓ ${esc(e.name)} — ${esc(e.email)}</div>`;
+    } catch(err) {
+      results.push({ ...e, ok:false, err: friendlyAuthError(err) });
+      prog.innerHTML += `<div style="font-size:13px;padding:3px 0;color:var(--red)">✕ ${esc(e.name)} — ${esc(friendlyAuthError(err))}</div>`;
+    }
+  }
+  masterCreated = results.filter(r => r.ok);
+  renderMasterResults(results);
+  const okN = masterCreated.length;
+  logActivity('joined', `${currentProfile.name} created ${okN} employee account(s)`);
+  toast(`${okN}/${entries.length} account(s) created`, okN ? 'success' : 'error');
+}
+
+// Uses a SECONDARY Firebase app so creating users doesn't sign the admin out.
+async function adminCreateUser(name, email, phone, dept, manager) {
+  const dbUrl = localStorage.getItem(DB_URL_KEY) || DEFAULT_DB_URL;
+  let secApp;
+  try { secApp = firebase.app('secondary'); }
+  catch(_) { secApp = firebase.initializeApp({ ...FIREBASE_CONFIG, databaseURL: dbUrl }, 'secondary'); }
+  const secAuth = secApp.auth();
+  const cred = await secAuth.createUserWithEmailAndPassword(email, phone);
+  const uid = cred.user.uid;
+  // write profile via the PRIMARY db (admin is still authenticated there)
+  await db.ref(`users/${uid}`).set({
+    name, email, phone, dept: dept || '', reportingManager: manager || '',
+    role: 'member', status: 'active', tempPass: true, createdAt: Date.now(), createdBy: currentUser.uid
+  });
+  await secAuth.signOut();
+  return uid;
+}
+
+function renderMasterResults(results) {
+  const ok = results.filter(r => r.ok);
+  const box = document.getElementById('master-results');
+  box.innerHTML = `
+    <div class="card">
+      <div class="section-header"><div class="section-title">Created Credentials (${ok.length})</div>
+        ${ok.length ? `<button class="btn btn-ghost btn-sm" onclick="exportCredsCsv()">⬇ Export CSV</button>` : ''}</div>
+      <div class="form-hint" style="margin-bottom:10px">Share these with employees securely. Passwords are their phone numbers — ask them to change it after first login.</div>
+      <div class="creds-box">
+        <div class="creds-row" style="font-weight:700;color:var(--gray7)"><span style="flex:2">Name</span><span style="flex:3">Email</span><span style="flex:2">Temp Password</span></div>
+        ${ok.length ? ok.map(r => `<div class="creds-row"><span style="flex:2">${esc(r.name)}</span><span style="flex:3">${esc(r.email)}</span><span style="flex:2">${esc(r.phone)}</span></div>`).join('') : '<div style="padding:8px;color:var(--gray5)">No accounts created</div>'}
+      </div>
+    </div>`;
+}
+
+function exportCredsCsv() {
+  if (!masterCreated.length) return;
+  const rows = [['Name','Email','Temp Password (phone)','Department']];
+  masterCreated.forEach(r => rows.push([r.name, r.email, r.phone, r.dept||'']));
+  const csv = rows.map(r => r.map(csvCell).join(',')).join('\n');
+  const blob = new Blob(['﻿'+csv], { type:'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'Habbit-new-accounts.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// ═══════════ CHANGE PASSWORD ═══════════
+async function changeMyPassword() {
+  const np = prompt('Enter a new password (min 6 characters):');
+  if (np === null) return;
+  if (np.length < 6) { toast('Password must be at least 6 characters','error'); return; }
+  try {
+    await currentUser.updatePassword(np);
+    await db.ref(`users/${currentUser.uid}/tempPass`).set(false);
+    toast('Password updated ✓','success');
+  } catch(e) {
+    if (e.code === 'auth/requires-recent-login') toast('Please sign out and back in, then change your password','error');
+    else toast(friendlyAuthError(e),'error');
+  }
+}
+
+// close popovers on outside click
+document.addEventListener('click', e => {
+  if (!e.target.closest('.topbar-search')) hideSearchResults();
+  if (!e.target.closest('#pm-assignees-chips') && !e.target.closest('#pm-member-dd')) {
+    const dd = document.getElementById('pm-member-dd');
+    if (dd) dd.classList.remove('open');
+  }
+  if (!e.target.closest('#spm-assignees-chips') && !e.target.closest('#spm-member-dd')) {
+    const dd = document.getElementById('spm-member-dd');
+    if (dd) dd.classList.remove('open');
+  }
+  if (!e.target.closest('#comment-input') && !e.target.closest('#inline-mention-dd')) {
+    const dd = document.getElementById('inline-mention-dd');
+    if (dd) { dd.classList.remove('open'); dd.innerHTML=''; }
+  }
+});
+
+</script>
+</body>
+</html>
